@@ -5,7 +5,7 @@ import { h, Fragment } from "./pdf-react";
 import { Document, Image, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { BRAND_COLORS, formatMonthYearEs } from "@/lib/brand";
 import { LEVEL_HEX, LEVEL_SOFT_HEX, type DocContent } from "@/lib/exports/doc-content";
-import type { DocBrand } from "@/lib/exports/doc-brand";
+import { fitLogo, type DocBrand } from "@/lib/exports/doc-brand";
 
 /**
  * Informe PDF con estética limpia tipo Apple (mucho aire, jerarquía por peso
@@ -97,7 +97,7 @@ function Chrome({ brand, st }: { brand: DocBrand; st: Styles }) {
   return (
     <>
       <View style={st.s.header} fixed>
-        {logo ? <Image src={logo} style={st.s.headerLogo} /> : <View />}
+        {logo ? <Image src={logo} style={fitLogo(brand, 27, 140)} /> : <View />}
         <Text style={st.s.headerText}>{brand.company}</Text>
       </View>
       <View style={st.s.footer} fixed>
@@ -148,7 +148,7 @@ function Cover({ c, brand, st }: { c: DocContent; brand: DocBrand; st: Styles })
         <Text style={st.s.footerText}>{brand.email}  ·  {brand.phone}</Text>
       </View>
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        {logo && <Image src={logo} style={{ width: 120, height: 117, marginBottom: 30 }} />}
+        {logo && <Image src={logo} style={{ ...fitLogo(brand, 117, 300), marginBottom: 30 }} />}
         <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 22, color: st.navy, letterSpacing: 0.5 , lineHeight: 1.15 }}>AUDITORÍA DE PRESENCIA DIGITAL</Text>
         <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 16, color: st.gold, marginTop: 6, letterSpacing: 2 , lineHeight: 1.15 }}>INFORME DETALLADO</Text>
         <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 30, color: st.navy, marginTop: 30, textAlign: "center", letterSpacing: -0.6 , lineHeight: 1.15 }}>{c.businessName}</Text>

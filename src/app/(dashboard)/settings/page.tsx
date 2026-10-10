@@ -24,7 +24,7 @@ interface UserSettings {
 
 interface RuntimeInfo {
   entorno: "local" | "vercel";
-  almacenamiento: "kv" | "sqlite" | "sqlite-efimero";
+  almacenamiento: "mysql" | "kv" | "sqlite" | "sqlite-efimero";
   persistente: boolean;
 }
 
@@ -38,6 +38,7 @@ const BRAND_DEFAULTS = {
 };
 
 const STORAGE_LABEL: Record<RuntimeInfo["almacenamiento"], string> = {
+  mysql: "MySQL del hosting (persistente)",
   kv: "Redis / Vercel KV (persistente)",
   sqlite: "SQLite local (persistente)",
   "sqlite-efimero": "SQLite temporal (se borra al reiniciar)",
@@ -398,7 +399,7 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <div className="flex items-center gap-4 rounded-2xl bg-secondary/60 p-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={formData.logo_url || "/brand/escudo.png"} alt="" className="h-12 w-12 object-contain" />
+              <img src={formData.logo_url || "/brand/escudo.png"} alt="" className="h-12 w-auto max-w-[96px] object-contain" />
               <div className="min-w-0">
                 <p className="truncate text-[15px] font-semibold" style={{ color: formData.primary_color }}>
                   {formData.company_name}

@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   description:
     "Auditorías de presencia digital e inteligencia de marca para negocios locales, con análisis estratégico asistido por IA y entregables con la identidad de Cyber Valtorix.",
   applicationName: BRAND.appName,
+  robots:
+    process.env.ALLOW_INDEXING === "true"
+      ? undefined
+      : { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
 };
 
 export const viewport: Viewport = {

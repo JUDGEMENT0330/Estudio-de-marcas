@@ -56,3 +56,34 @@ describe("branded exports", () => {
     expect(contentDisposition(report, "pdf")).toContain("filename*=UTF-8''");
   });
 });
+
+describe("logo proportions", () => {
+  it("keeps the aspect ratio of wide logos", async () => {
+    const { pngSize, fitLogo, resolveDocBrand } = await import("@/lib/exports/doc-brand");
+    // PNG mínimo de 900×240 (solo cabecera IHDR) para validar la lectura de tamaño.
+    const header = Buffer.alloc(33);
+    header.writeUInt32BE(0x89504e47, 0);
+    header.writeUInt32BE(0x49484452, 12);
+    header.writeUInt32BE(900, 16);
+    header.writeUInt32BE(240, 20);
+    expect(pngSize(header)).toEqual({ width: 900, height: 240 });
+
+    const brand = await resolveDocBrand();
+    const wide = { ...brand, logoRatio: 900 / 240 };
+    expect(fitLogo(wide, 40, 1000)).toEqual({ width: 150, height: 40 });
+    const capped = fitLogo(wide, 40, 75);
+    expect(capped.width).toBe(75);
+    expect(capped.height).toBeCloseTo(20);
+  });
+
+  it("renders documents with a custom wide PNG logo", async () => {
+    const wide = process.env.WIDE_LOGO_PATH;
+    if (!wide) return;
+    const logo = `data:image/png;base64,${fs.readFileSync(wide).toString("base64")}`;
+    const pdf = await generateReportPDF(report, { logo_url: logo });
+    const docx = await generateReportDOCX(report, { logo_url: logo });
+    save("logo-ancho.pdf", pdf);
+    save("logo-ancho.docx", docx);
+    expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
+  });
+});

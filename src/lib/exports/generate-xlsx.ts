@@ -2,7 +2,7 @@ import ExcelJS from "exceljs";
 import type { Report, WhiteLabelConfig } from "@/lib/db/types";
 import { BRAND_COLORS } from "@/lib/brand";
 import { buildDocContent, LEVEL_HEX, LEVEL_SOFT_HEX } from "./doc-content";
-import { resolveDocBrand } from "./doc-brand";
+import { fitLogo, resolveDocBrand } from "./doc-brand";
 
 /**
  * Libro de Excel con la identidad Cyber Valtorix: logo en la hoja de
@@ -80,7 +80,7 @@ export async function generateReportXLSX(report: Report, branding?: WhiteLabelCo
   setupSheet(resumen);
   resumen.columns = [{ width: 4 }, { width: 28 }, { width: 70 }];
   if (logoId !== undefined) {
-    resumen.addImage(logoId, { tl: { col: 1, row: 0.3 }, ext: { width: 56, height: 54 } });
+    resumen.addImage(logoId, { tl: { col: 1, row: 0.3 }, ext: fitLogo(brand, 54, 180) });
   }
   resumen.getRow(1).height = 46;
   resumen.mergeCells("C1:C1");

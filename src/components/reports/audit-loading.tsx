@@ -149,7 +149,7 @@ export function AuditLoading({ reportId, businessName, city, onComplete }: Audit
         <div className="relative inline-flex items-center justify-center mb-4">
           <div className="absolute h-20 w-20 rounded-full bg-primary/10 motion-safe:animate-ping" style={{ animationDuration: "2.4s" }} />
           <div className="relative flex h-20 w-20 items-center justify-center rounded-[28px] bg-white shadow-raised">
-            <img src="/brand/escudo.png" alt="" className="h-12 w-12" />
+            <img src="/brand/escudo.png" alt="" className="h-12 w-auto max-w-[64px] object-contain" />
           </div>
         </div>
         <p className="eyebrow text-brand-gold">Auditoría en curso</p>

@@ -24,6 +24,8 @@ export interface DocBrand {
   teal: string;
   text: string;
   logo: Buffer | null;
+  /** Ancho / alto del logo (1 = cuadrado). Permite usar logos horizontales sin deformarlos. */
+  logoRatio: number;
   footerIcon: Buffer | null;
   /** Firma y sello: solo si existe localmente o por variable de entorno. */
   signature: Buffer | null;
@@ -75,8 +77,30 @@ function readSignature(): Buffer | null {
   return null;
 }
 
+/** Lee ancho y alto de un PNG desde su cabecera IHDR. */
+export function pngSize(data: Buffer | null): { width: number; height: number } | null {
+  if (!data || data.length < 24 || data.readUInt32BE(12) !== 0x49484452) return null;
+  return { width: data.readUInt32BE(16), height: data.readUInt32BE(20) };
+}
+
+/**
+ * Tamaño del logo dentro de una caja (alto máximo y ancho máximo), conservando
+ * la proporción original.
+ */
+export function fitLogo(brand: DocBrand, maxHeight: number, maxWidth: number): { width: number; height: number } {
+  let height = maxHeight;
+  let width = height * brand.logoRatio;
+  if (width > maxWidth) {
+    width = maxWidth;
+    height = width / brand.logoRatio;
+  }
+  return { width, height };
+}
+
 export async function resolveDocBrand(config?: WhiteLabelConfig): Promise<DocBrand> {
   const customLogo = config?.logo_url ? await fetchLogo(config.logo_url) : null;
+  const logo = customLogo ?? readBrandAsset("escudo");
+  const size = pngSize(logo);
   return {
     company: config?.company_name?.trim() || BRAND.company,
     companyShort: BRAND.companyShort,
@@ -90,7 +114,8 @@ export async function resolveDocBrand(config?: WhiteLabelConfig): Promise<DocBra
     blue: BRAND_COLORS.blue,
     teal: BRAND_COLORS.teal,
     text: BRAND_COLORS.dgray,
-    logo: customLogo ?? readBrandAsset("escudo"),
+    logo,
+    logoRatio: size && size.height > 0 ? size.width / size.height : 1,
     footerIcon: readBrandAsset("icono-footer"),
     signature: readSignature(),
   };

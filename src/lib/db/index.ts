@@ -1,6 +1,9 @@
 export * from "./types";
 
 import { getStorageBackend } from "@/lib/runtime";
+import { createLocalSqliteDb } from "./local-sqlite";
+import { createKvDb } from "./kv-store";
+import { createMysqlDb } from "./mysql-store";
 import type {
   User,
   Report,
@@ -16,6 +19,7 @@ import type {
 // ---------------------------------------------------------------------------
 // Unified DB interface
 // ---------------------------------------------------------------------------
+// MySQL (p. ej. la base de datos del hosting de Hostinger) si está configurado.
 // Local: SQLite (./data). Vercel: Redis/KV persistente si está configurado
 // (KV_REST_API_URL + KV_REST_API_TOKEN o UPSTASH_REDIS_REST_*); si no, SQLite
 // efímero en /tmp. Las rutas no necesitan saber qué backend está activo.
@@ -76,18 +80,16 @@ let _db: DbInterface | null = null;
 
 /**
  * Devuelve la interfaz de base de datos según el entorno (KV o SQLite).
- * Los módulos se cargan de forma diferida para no inicializar el binario
- * nativo de SQLite cuando se usa KV en Vercel.
+ * Cada backend se inicializa solo cuando se elige (la conexión es diferida).
  */
 export function getDb(): DbInterface {
   if (_db) return _db;
-  if (getStorageBackend() === "kv") {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createKvDb } = require("./kv-store") as typeof import("./kv-store");
+  const backend = getStorageBackend();
+  if (backend === "mysql") {
+    _db = createMysqlDb();
+  } else if (backend === "kv") {
     _db = createKvDb();
   } else {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createLocalSqliteDb } = require("./local-sqlite") as typeof import("./local-sqlite");
     _db = createLocalSqliteDb();
   }
   return _db;

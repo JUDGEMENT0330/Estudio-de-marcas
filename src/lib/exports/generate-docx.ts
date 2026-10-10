@@ -23,7 +23,7 @@ import {
 import type { Report, WhiteLabelConfig } from "@/lib/db/types";
 import { BRAND_COLORS, formatMonthYearEs } from "@/lib/brand";
 import { buildDocContent, LEVEL_HEX, LEVEL_SOFT_HEX, type DocContent } from "./doc-content";
-import { resolveDocBrand, type DocBrand } from "./doc-brand";
+import { fitLogo, resolveDocBrand, type DocBrand } from "./doc-brand";
 
 /**
  * Informe Word con la plantilla de Cyber Valtorix:
@@ -131,7 +131,7 @@ function makeHelpers(brand: DocBrand) {
 function buildHeader(brand: DocBrand): Header {
   const children: (TextRun | ImageRun)[] = [];
   if (brand.logo) {
-    children.push(new ImageRun({ type: "png", data: brand.logo, transformation: { width: 38, height: 37 } }));
+    children.push(new ImageRun({ type: "png", data: brand.logo, transformation: fitLogo(brand, 37, 160) }));
   }
   children.push(new TextRun({ text: `\t${brand.company}`, font: HF_FONT, size: 22, bold: true, color: "000000" }));
   return new Header({
@@ -192,7 +192,7 @@ function coverPage(c: DocContent, brand: DocBrand, H: ReturnType<typeof makeHelp
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { after: 360 },
-        children: [new ImageRun({ type: "png", data: brand.logo, transformation: { width: 150, height: 146 } })],
+        children: [new ImageRun({ type: "png", data: brand.logo, transformation: fitLogo(brand, 146, 360) })],
       }),
     );
   }

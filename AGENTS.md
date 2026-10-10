@@ -4,7 +4,8 @@
 > - Toda la UI, los mensajes de API y los documentos exportados están en **español**. Mantén los textos nuevos en español (es-419).
 > - La IA redacta en español mediante `outputLanguageDirective()` en `src/lib/ai/claude.ts`; los prompts internos pueden seguir en inglés.
 > - Los documentos usan la identidad de **Cyber Valtorix** (`src/lib/brand/`, `src/lib/exports/doc-brand.ts`); el contenido sale de `src/lib/exports/doc-content.ts`.
-> - Debe funcionar en local (SQLite) **y** en Vercel (Redis/KV vía `src/lib/db/kv-store.ts`, `after()` para trabajo en segundo plano). No dependas de escribir en disco fuera de `getDataDir()`.
+> - Almacenamiento: MySQL del hosting (`src/lib/db/mysql-store.ts`, `DATABASE_URL=mysql://…`) > Redis/KV (`kv-store.ts`) > SQLite local. Debe funcionar en local **y** en Vercel (`after()` para trabajo en segundo plano).
+> - La app es privada: no la enlaces desde el sitio público ni quites el `noindex` (`src/app/robots.ts`, middleware). No dependas de escribir en disco fuera de `getDataDir()`.
 > - Nunca subas `private/` ni la firma/sello: el repositorio es público.
 > - Estilo visual: lenguaje de diseño tipo Apple (tokens en `src/app/globals.css`).
 

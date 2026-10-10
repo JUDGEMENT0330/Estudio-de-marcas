@@ -2,7 +2,7 @@ import PptxGenJS from "pptxgenjs";
 import type { Report, WhiteLabelConfig } from "@/lib/db/types";
 import { BRAND_COLORS } from "@/lib/brand";
 import { buildDocContent, LEVEL_HEX, LEVEL_SOFT_HEX, type DocContent } from "./doc-content";
-import { resolveDocBrand, type DocBrand } from "./doc-brand";
+import { fitLogo, resolveDocBrand, type DocBrand } from "./doc-brand";
 
 /**
  * Presentación con estética tipo Keynote (fondos limpios, tipografía grande,
@@ -28,7 +28,10 @@ function truncate(text: string, max: number): string {
 
 function chrome(pres: PptxGenJS, slide: PptxGenJS.Slide, brand: DocBrand, n: number, total: () => number) {
   const logo = png(brand.logo);
-  if (logo) slide.addImage({ data: logo, x: 0.4, y: 0.22, w: 0.32, h: 0.31 });
+  if (logo) {
+    const { width: w, height: h } = fitLogo(brand, 0.31, 1.6);
+    slide.addImage({ data: logo, x: 0.4, y: 0.22 + (0.31 - h) / 2, w, h });
+  }
   slide.addText(brand.company, {
     x: 4.6, y: 0.22, w: 5.0, h: 0.32, align: "right", fontFace: "Times New Roman",
     fontSize: 10, bold: true, color: "000000",
@@ -62,8 +65,11 @@ function coverSlide(pres: PptxGenJS, c: DocContent, brand: DocBrand) {
   s.addShape(pres.ShapeType.ellipse, { x: 6.6, y: -1.6, w: 5, h: 5, fill: { color: BRAND_COLORS.blue, transparency: 70 }, line: { color: BRAND_COLORS.blue, transparency: 100 } });
   s.addShape(pres.ShapeType.ellipse, { x: -1.5, y: 3.6, w: 4, h: 4, fill: { color: brand.accent, transparency: 85 }, line: { color: brand.accent, transparency: 100 } });
   const logo = png(brand.logo);
-  if (logo) s.addImage({ data: logo, x: 0.7, y: 0.6, w: 0.75, h: 0.73 });
-  s.addText(brand.company, { x: 1.6, y: 0.72, w: 6, h: 0.45, fontFace: FONT, fontSize: 12, bold: true, color: "FFFFFF", charSpacing: 2 });
+  if (logo) {
+    const { width: w, height: h } = fitLogo(brand, 0.73, 2.4);
+    s.addImage({ data: logo, x: 0.7, y: 0.6 + (0.73 - h) / 2, w, h });
+  }
+  s.addText(brand.company, { x: 0.7 + fitLogo(brand, 0.73, 2.4).width + 0.2, y: 0.72, w: 6, h: 0.45, fontFace: FONT, fontSize: 12, bold: true, color: "FFFFFF", charSpacing: 2 });
   s.addText("AUDITORÍA DE PRESENCIA DIGITAL", { x: 0.7, y: 1.85, w: 8.6, h: 0.35, fontFace: FONT, fontSize: 13, bold: true, color: brand.accent, charSpacing: 3 });
   s.addText(c.businessName, { x: 0.7, y: 2.2, w: 8.6, h: 1.1, fontFace: FONT, fontSize: 44, bold: true, color: "FFFFFF", fit: "shrink", valign: "top" });
   s.addText([c.location, c.dateLong].filter(Boolean).join("   ·   "), { x: 0.7, y: 3.35, w: 8.6, h: 0.4, fontFace: FONT, fontSize: 15, color: "D5E8F0" });
@@ -238,7 +244,10 @@ export async function generateReportPPTX(report: Report, branding?: WhiteLabelCo
     const s = pres.addSlide();
     s.background = { color: brand.primary };
     const logo = png(brand.logo);
-    if (logo) s.addImage({ data: logo, x: 4.45, y: 0.8, w: 1.1, h: 1.07 });
+    if (logo) {
+      const { width: w, height: h } = fitLogo(brand, 1.07, 3.5);
+      s.addImage({ data: logo, x: 5 - w / 2, y: 0.8 + (1.07 - h) / 2, w, h });
+    }
     s.addText("Gracias", { x: 0.5, y: 2.05, w: 9, h: 0.8, align: "center", fontFace: FONT, fontSize: 40, bold: true, color: "FFFFFF" });
     if (c.bottomLine) {
       s.addText(`“${truncate(c.bottomLine, 200)}”`, { x: 1.2, y: 2.85, w: 7.6, h: 0.75, align: "center", fontFace: FONT, fontSize: 14, italic: true, color: "D5E8F0", fit: "shrink" });

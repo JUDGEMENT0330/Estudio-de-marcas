@@ -3,6 +3,10 @@ import { NextResponse, type NextRequest } from "next/server";
 const AUTH_PAGES = ["/login", "/signup"];
 
 function applySecurityHeaders(response: NextResponse): NextResponse {
+  if (process.env.ALLOW_INDEXING !== "true") {
+    // Herramienta privada: fuera de buscadores, archivos y vistas previas.
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
+  }
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "SAMEORIGIN");
@@ -24,7 +28,7 @@ function isAuthPage(pathname: string): boolean {
  * autenticación HTTP básica en toda la app. Los reportes compartidos (/r/...)
  * y el chequeo de salud quedan públicos.
  */
-const PUBLIC_PREFIXES = ["/r/", "/api/health"];
+const PUBLIC_PREFIXES = ["/r/", "/api/health", "/robots.txt"];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));

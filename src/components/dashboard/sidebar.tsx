@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -13,7 +12,7 @@ interface SidebarProps {
   };
   runtime: {
     environment: "local" | "vercel";
-    storage: "kv" | "sqlite" | "sqlite-efimero";
+    storage: "mysql" | "kv" | "sqlite" | "sqlite-efimero";
   };
 }
 
@@ -24,6 +23,7 @@ const navigation = [
 ];
 
 const STORAGE_LABEL: Record<SidebarProps["runtime"]["storage"], string> = {
+  mysql: "MySQL (hosting)",
   kv: "Redis (KV)",
   sqlite: "SQLite",
   "sqlite-efimero": "SQLite temporal",
@@ -32,13 +32,12 @@ const STORAGE_LABEL: Record<SidebarProps["runtime"]["storage"], string> = {
 function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
     <Link href="/audits" className="press flex items-center gap-2.5 rounded-xl">
-      <Image
+      {/* Altura fija y ancho automático: admite logos cuadrados u horizontales. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src="/brand/escudo.png"
         alt="Cyber Valtorix"
-        width={compact ? 28 : 34}
-        height={compact ? 28 : 34}
-        priority
-        className="drop-shadow-sm"
+        className={`${compact ? "h-7" : "h-[34px]"} w-auto max-w-[120px] object-contain drop-shadow-sm`}
       />
       <div className="leading-tight">
         <div className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">

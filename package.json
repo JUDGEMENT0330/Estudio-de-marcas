@@ -19,7 +19,8 @@
     "test:visual": "node testing_framework/visual-smoke.mjs",
     "verify:local": "node scripts/verify-local.mjs",
     "test:watch": "vitest --watch",
-    "test:verbose": "vitest run --reporter=verbose"
+    "test:verbose": "vitest run --reporter=verbose",
+    "brand:logo": "node scripts/set-logo.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -37,6 +38,7 @@
     "docx": "^9.6.0",
     "exceljs": "^4.4.0",
     "lucide-react": "^0.300.0",
+    "mysql2": "^3.24.5",
     "next": "^15.5.19",
     "openai": "^6.25.0",
     "postcss": "^8.5.6",

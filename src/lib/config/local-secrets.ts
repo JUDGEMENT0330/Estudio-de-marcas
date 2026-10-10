@@ -8,6 +8,14 @@ import { kvCommand } from "@/lib/kv/client";
 
 const KV_SECRETS_KEY = `${process.env.KV_PREFIX?.trim() || "edm"}:secrets`;
 const useKv = () => getStorageBackend() === "kv";
+const useMysql = () => getStorageBackend() === "mysql";
+
+async function mysqlRows(sql: string, params: unknown[] = []): Promise<SecretRow[]> {
+  const { getMysqlPool } = await import("@/lib/mysql/pool");
+  const pool = await getMysqlPool();
+  const [result] = await pool.query(sql, params);
+  return result as SecretRow[];
+}
 
 export type LocalSecretKey =
   | "google_places_api_key"
@@ -147,6 +155,18 @@ export async function setSecret(
   value: string
 ): Promise<void> {
   const encrypted = encryptSecret(value, loadInstanceKey());
+  if (useMysql()) {
+    const now = new Date().toISOString();
+    await mysqlRows(
+      `INSERT INTO edm_secrets (\`key\`, provider, label, encrypted_value, iv, auth_tag, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE provider = VALUES(provider), label = VALUES(label),
+         encrypted_value = VALUES(encrypted_value), iv = VALUES(iv), auth_tag = VALUES(auth_tag),
+         updated_at = VALUES(updated_at), last_tested_at = NULL, last_test_status = NULL, last_test_message = NULL`,
+      [key, provider, label, encrypted.encryptedValue, encrypted.iv, encrypted.authTag, now, now],
+    );
+    return;
+  }
   if (useKv()) {
     await kvWriteRow({
       key,
@@ -187,7 +207,9 @@ export async function setSecret(
 
 export async function getSecret(key: LocalSecretKey): Promise<string | undefined> {
   let row: SecretRow | undefined;
-  if (useKv()) {
+  if (useMysql()) {
+    row = (await mysqlRows("SELECT * FROM edm_secrets WHERE `key` = ? LIMIT 1", [key]))[0];
+  } else if (useKv()) {
     row = await kvReadRow(key);
   } else {
     ensureTable();
@@ -205,6 +227,10 @@ export async function getSecret(key: LocalSecretKey): Promise<string | undefined
 }
 
 export async function deleteSecret(key: LocalSecretKey): Promise<void> {
+  if (useMysql()) {
+    await mysqlRows("DELETE FROM edm_secrets WHERE `key` = ?", [key]);
+    return;
+  }
   if (useKv()) {
     await kvCommand("HDEL", KV_SECRETS_KEY, key);
     return;
@@ -214,6 +240,9 @@ export async function deleteSecret(key: LocalSecretKey): Promise<void> {
 }
 
 export async function listSecretMetadata(): Promise<SecretMetadata[]> {
+  if (useMysql()) {
+    return (await mysqlRows("SELECT * FROM edm_secrets ORDER BY provider, label")).map(rowToMetadata);
+  }
   if (useKv()) {
     const raw = await kvCommand<string[] | null>("HVALS", KV_SECRETS_KEY);
     return (raw ?? [])
@@ -235,6 +264,13 @@ export async function updateSecretTestStatus(
   message: string
 ): Promise<void> {
   const now = new Date().toISOString();
+  if (useMysql()) {
+    await mysqlRows(
+      "UPDATE edm_secrets SET last_tested_at = ?, last_test_status = ?, last_test_message = ?, updated_at = ? WHERE `key` = ?",
+      [now, status, message, now, key],
+    );
+    return;
+  }
   if (useKv()) {
     const row = await kvReadRow(key);
     if (row) {

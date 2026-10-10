@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
-import { getHomeDir, getKvConfig, isVercel } from "@/lib/runtime";
+import { getHomeDir, getKvConfig, getMysqlConfig, isVercel } from "@/lib/runtime";
 
 function getPhantomHome(): string {
   return getHomeDir();
@@ -19,6 +19,13 @@ function keyFromEnvironment(): Buffer | undefined {
   if (explicit) {
     if (/^[a-f0-9]{64}$/i.test(explicit)) return Buffer.from(explicit, "hex");
     return crypto.createHash("sha256").update(explicit).digest();
+  }
+  const mysqlConfig = getMysqlConfig();
+  if (isVercel() && mysqlConfig) {
+    return crypto
+      .createHash("sha256")
+      .update(`estudio-de-marcas:${mysqlConfig.host}:${mysqlConfig.user}:${mysqlConfig.password}`)
+      .digest();
   }
   const kv = getKvConfig();
   if (isVercel() && kv) {
