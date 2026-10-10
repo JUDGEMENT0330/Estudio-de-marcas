@@ -13,6 +13,7 @@ import { IntelligenceCard } from "@/components/reports/intelligence-card";
 import { AuditLoading } from "@/components/reports/audit-loading";
 import { AIAnalysisCard } from "@/components/reports/ai-analysis-card";
 import { AIAgentPanel } from "@/components/reports/ai-agent-panel";
+import { ReportActions } from "@/components/reports/report-actions";
 import { StrategicIntelligenceCard } from "@/components/reports/strategic-intelligence-card";
 import { BusinessContextCard } from "@/components/reports/business-context-card";
 import { repairMojibakeText, repairMojibakeValue } from "@/lib/text/repair";
@@ -705,6 +706,8 @@ export default function AuditReportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [revenueScenario, setRevenueScenario] = useState<"low" | "mid" | "high">("mid");
+  // Se incrementa tras "Actualizar" o "Editar datos" para recargar el reporte.
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     async function fetchReport() {
@@ -730,7 +733,7 @@ export default function AuditReportPage() {
       setError("Reporte no encontrado");
       setLoading(false);
     }
-  }, [reportId]);
+  }, [reportId, reloadKey]);
 
   if (loading) {
     return (
@@ -771,7 +774,9 @@ export default function AuditReportPage() {
         <XCircle className="h-8 w-8 text-destructive" />
         <p className="mt-4 text-lg font-medium">La auditoría falló</p>
         <p className="mt-1 max-w-md text-center text-sm text-muted-foreground">Revisa las llaves en Configuración o vuelve a intentarlo. En Vercel, verifica que la función no haya excedido su duración máxima.</p>
-        <Link href="/audits/new" className="mt-4"><Button>Reintentar</Button></Link>
+        <div className="mt-4">
+          <ReportActions reportId={report.id} status={report.status} input={report.input as AuditInput} onChanged={() => setReloadKey((k) => k + 1)} />
+        </div>
       </div>
     );
   }
@@ -804,7 +809,9 @@ export default function AuditReportPage() {
             {(auditInput.city || auditInput.state) ? " · " : ""}Auditado el {new Date(report.created_at).toLocaleDateString("es-SV", { year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
-        <div className="no-print flex flex-wrap gap-2">
+        <div className="no-print flex flex-col gap-2 sm:items-end">
+        <ReportActions reportId={report.id} status={report.status} input={auditInput} onChanged={() => setReloadKey((k) => k + 1)} />
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => window.open(`/api/report/${params.id}/pdf`, "_blank")}>
             <Download className="h-4 w-4" />PDF
           </Button>
@@ -817,6 +824,7 @@ export default function AuditReportPage() {
           <Button variant="outline" size="sm" onClick={() => window.open(`/api/report/${params.id}/xlsx`, "_blank")}>
             <Sheet className="h-4 w-4" />Excel
           </Button>
+        </div>
         </div>
       </div>
 

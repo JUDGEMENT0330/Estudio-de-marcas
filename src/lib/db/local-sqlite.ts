@@ -397,6 +397,10 @@ export function createLocalSqliteDb(dbPath?: string): LocalSqliteDb {
       return getReportById(id);
     },
 
+    async deleteReport(id): Promise<boolean> {
+      return sqlite.prepare("DELETE FROM reports WHERE id = ?").run(id).changes > 0;
+    },
+
     async trackUsage(data: {
       user_id: string;
       action: UsageAction;

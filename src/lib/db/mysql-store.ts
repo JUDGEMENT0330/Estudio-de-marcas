@@ -242,6 +242,13 @@ export function createMysqlDb(): LocalSqliteDb {
       return getReport(id);
     },
 
+    async deleteReport(id) {
+      const existing = await getReport(id);
+      if (!existing) return false;
+      await run("DELETE FROM edm_reports WHERE id = ?", [id]);
+      return true;
+    },
+
     async trackUsage(data: {
       user_id: string;
       action: UsageAction;
