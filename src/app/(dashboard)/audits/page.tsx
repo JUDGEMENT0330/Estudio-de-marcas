@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { requireCurrentUser } from "@/lib/auth/server";
 import type { AuditInput, ReportScores } from "@/lib/db/types";
 import { GradeBadge } from "@/components/reports/grade-badge";
+import { ReportActions } from "@/components/reports/report-actions";
 import {
   reportListActionLabel,
   reportStatusBadgeClass,
@@ -118,17 +119,18 @@ export default async function AuditsPage() {
               );
 
               return (
-                <li key={report.id}>
+                <li key={report.id} className="flex items-center pr-2 sm:pr-4">
                   {isCompleted ? (
                     <Link
                       href={`/audits/${report.id}`}
-                      className="block transition-colors duration-150 hover:bg-black/[0.02] active:bg-black/[0.04]"
+                      className="block min-w-0 flex-1 transition-colors duration-150 hover:bg-black/[0.02] active:bg-black/[0.04]"
                     >
                       {row}
                     </Link>
                   ) : (
-                    row
+                    <div className="min-w-0 flex-1">{row}</div>
                   )}
+                  <ReportActions reportId={report.id} status={report.status} input={input} variant="list" stayAfterDelete />
                 </li>
               );
             })}

@@ -55,6 +55,8 @@ export interface DbInterface {
     is_widget_generated?: boolean;
   }): Promise<Report>;
   updateReport(id: string, data: Partial<Report>): Promise<Report | undefined>;
+  /** Elimina el reporte de forma permanente. Devuelve false si no existía. */
+  deleteReport(id: string): Promise<boolean>;
 
   // Usage
   trackUsage(data: {

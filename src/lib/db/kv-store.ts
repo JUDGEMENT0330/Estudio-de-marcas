@@ -210,6 +210,17 @@ export function createKvDb(): LocalSqliteDb {
       return reconcile(updated);
     },
 
+    async deleteReport(id) {
+      const current = await kvGetJson<Report>(k.report(id));
+      if (!current) return false;
+      await kvPipeline([
+        ["DEL", k.report(id)],
+        ["ZREM", k.userReports(current.user_id), id],
+        ["ZREM", k.expiring(), id],
+      ]);
+      return true;
+    },
+
     async trackUsage(data: {
       user_id: string;
       action: UsageAction;
