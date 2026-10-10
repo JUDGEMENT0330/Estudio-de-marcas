@@ -67,6 +67,8 @@ describe("Gemini: modelos nuevos y retirados", () => {
     generateContent.mockResolvedValue({ text: "ok", candidates: [] });
     await googleProvider.complete({ prompt: "x" });
     expect(generateContent.mock.calls[0][0].model).toBe("gemini-flash-latest");
+    // Margen para el razonamiento interno: evita respuestas vacías.
+    expect(generateContent.mock.calls[0][0].config.maxOutputTokens).toBe(1024 + 8192);
   });
 
   it("conserva thoughtSignature al reenviar las llamadas a herramientas (Gemini 3)", async () => {

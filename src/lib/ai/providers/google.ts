@@ -36,6 +36,16 @@ function currentModel(): string {
   return _activeModel ?? (process.env.GOOGLE_AI_MODEL?.trim() || DEFAULT_MODEL);
 }
 
+/**
+ * Los modelos Gemini 2.5+ "piensan" antes de responder y esos tokens se
+ * descuentan de maxOutputTokens: con un límite ajustado la respuesta llega
+ * vacía (finishReason MAX_TOKENS). Se suma margen para el razonamiento; solo
+ * se cobran los tokens usados.
+ */
+export function outputBudget(maxTokens: number): number {
+  return Math.min(maxTokens + 8192, 65536);
+}
+
 /** ¿El error indica que el modelo ya no existe o no está disponible? */
 export function isModelUnavailableError(error: unknown): boolean {
   const status = (error as { status?: number; code?: number })?.status ?? (error as { code?: number })?.code;
@@ -247,7 +257,7 @@ class GoogleProvider implements LLMProvider {
       contents: prompt,
       config: {
         ...(system ? { systemInstruction: system } : {}),
-        maxOutputTokens: maxTokens,
+        maxOutputTokens: outputBudget(maxTokens),
         temperature,
       },
     });
@@ -354,7 +364,7 @@ class GoogleProvider implements LLMProvider {
         contents,
         config: {
           ...(system ? { systemInstruction: system } : {}),
-          maxOutputTokens: maxTokens,
+          maxOutputTokens: outputBudget(maxTokens),
           temperature,
           // Gemini rechaza una lista de funciones vacía.
           ...(tools.length ? { tools: geminiTools } : {}),
@@ -425,12 +435,27 @@ class GoogleProvider implements LLMProvider {
       }
     }
 
-    // Hit max turns
-    console.warn(`[ai/google] Hit max turns (${maxTurns}) in agentic loop`);
+    // Se agotaron los turnos: pedir la respuesta final con lo reunido, sin herramientas.
+    console.warn(`[ai/google] Hit max turns (${maxTurns}) in agentic loop — requesting final answer`);
+    contents.push({
+      role: "user",
+      parts: [{ text: "Stop using tools now. Write the complete final answer using only the information gathered so far." }],
+    });
+    const final = await generateWithFallback(client, {
+      contents,
+      config: {
+        ...(system ? { systemInstruction: system } : {}),
+        maxOutputTokens: outputBudget(maxTokens),
+        temperature,
+      },
+    });
     return {
-      text: "Analysis incomplete — reached maximum tool call limit. Results may be partial.",
+      text: final.text ?? null,
       toolCalls: allToolCalls,
-      usage: { inputTokens: totalInputTokens, outputTokens: totalOutputTokens },
+      usage: {
+        inputTokens: totalInputTokens + (final.usageMetadata?.promptTokenCount ?? 0),
+        outputTokens: totalOutputTokens + (final.usageMetadata?.candidatesTokenCount ?? 0),
+      },
     };
   }
 
