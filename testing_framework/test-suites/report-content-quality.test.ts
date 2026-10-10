@@ -176,18 +176,18 @@ describe("report content quality guardrails", () => {
   });
 
   it("keeps report presentation labels client-facing", () => {
-    expect(humanizeModuleKey("website_performance")).toBe("Website");
-    expect(humanizeModuleKey("revenue_impact")).toBe("Business impact");
+    expect(humanizeModuleKey("website_performance")).toBe("Sitio web");
+    expect(humanizeModuleKey("revenue_impact")).toBe("Impacto en el negocio");
     expect(humanizeModuleReferences("Fix website_performance before revenue_impact decisions.")).toBe(
-      "Fix Website before Business impact decisions."
+      "Fix Sitio web before Impacto en el negocio decisions."
     );
     expect(humanizeModuleReferences("revenue_basis is unverified_estimate")).toBe(
-      "revenue basis is unverified estimate"
+      "base de ingresos is estimación no verificada"
     );
     expect(cleanCategorySkillLabel("dynamic:Independent general, cosmetic, and family dental practice")).toBe(
-      "Dental practice"
+      "Clínica dental"
     );
-    expect(priorityPlanSubtitle(false)).not.toMatch(/ROI|revenue/i);
+    expect(priorityPlanSubtitle(false)).not.toMatch(/ROI|ingresos/i);
     expect(priorityPlanSubtitle(true)).toMatch(/ROI/i);
   });
 
@@ -300,14 +300,14 @@ describe("report content quality guardrails", () => {
     expect(sanitized).not.toBe(result);
     expect(sanitized.executive_summary).toMatchObject({
       key_stats: [{ label: "Reviews", value: "612", sentiment: "positive" }],
-      top_strength: expect.objectContaining({ module: "Reviews" }),
-      critical_gap: expect.objectContaining({ module: "Website" }),
+      top_strength: expect.objectContaining({ module: "Reseñas" }),
+      critical_gap: expect.objectContaining({ module: "Sitio web" }),
     });
     expect(text).not.toMatch(/\$3,200|\$1,600|\$3\.2k|\/mo|revenue leakage/i);
     expect(text).not.toMatch(/website_performance|revenue_impact|review_sentiment|unverified_estimate/i);
     expect(text).not.toMatch(/the model|the report|this module|reported total|cannot be independently validated|rebuild the model|rebuild the analysis|\bROI\b|full directory audit/i);
-    expect(text).toContain("Website");
-    expect(text).toContain("Business impact");
+    expect(text).toContain("Sitio web");
+    expect(text).toContain("Impacto en el negocio");
     expect(text).toContain("dedicated directory scan");
   });
 

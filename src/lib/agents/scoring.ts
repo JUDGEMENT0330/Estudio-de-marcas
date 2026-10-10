@@ -28,10 +28,10 @@ export interface GradeResult {
 }
 
 const DEFAULT_LABELS: Record<GradeTier, string> = {
-  excellent: "Strong",
-  good: "Solid",
-  developing: "Developing",
-  needs_attention: "Needs Attention",
+  excellent: "Fuerte",
+  good: "Sólido",
+  developing: "En desarrollo",
+  needs_attention: "Requiere atención",
 };
 
 const TIER_EMOJI: Record<GradeTier, string> = {

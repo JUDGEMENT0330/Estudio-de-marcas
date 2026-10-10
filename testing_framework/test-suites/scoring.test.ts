@@ -68,10 +68,10 @@ describe("Scoring Engine", () => {
 
     it("should use stable generic labels for module grades", async () => {
       const { moduleScoreToGradeLabel } = await import(scoringPath);
-      expect(moduleScoreToGradeLabel(90)).toBe("Strong");
-      expect(moduleScoreToGradeLabel(70)).toBe("Solid");
-      expect(moduleScoreToGradeLabel(50)).toBe("Developing");
-      expect(moduleScoreToGradeLabel(20)).toBe("Needs Attention");
+      expect(moduleScoreToGradeLabel(90)).toBe("Fuerte");
+      expect(moduleScoreToGradeLabel(70)).toBe("Sólido");
+      expect(moduleScoreToGradeLabel(50)).toBe("En desarrollo");
+      expect(moduleScoreToGradeLabel(20)).toBe("Requiere atención");
     });
   });
 

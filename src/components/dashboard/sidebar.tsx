@@ -1,109 +1,166 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  FileSearch,
-  HardDrive,
-  Settings,
-  Zap,
-} from "lucide-react";
+import { Cloud, FileSearch, HardDrive, Plus, Settings } from "lucide-react";
 
 interface SidebarProps {
   user: {
     name?: string;
     email: string;
   };
+  runtime: {
+    environment: "local" | "vercel";
+    storage: "kv" | "sqlite" | "sqlite-efimero";
+  };
 }
 
 const navigation = [
-  { name: "Audits", href: "/audits", icon: FileSearch },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Auditorías", href: "/audits", icon: FileSearch },
+  { name: "Nueva auditoría", href: "/audits/new", icon: Plus },
+  { name: "Configuración", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar({ user }: SidebarProps) {
+const STORAGE_LABEL: Record<SidebarProps["runtime"]["storage"], string> = {
+  kv: "Redis (KV)",
+  sqlite: "SQLite",
+  "sqlite-efimero": "SQLite temporal",
+};
+
+function BrandMark({ compact = false }: { compact?: boolean }) {
+  return (
+    <Link href="/audits" className="press flex items-center gap-2.5 rounded-xl">
+      <Image
+        src="/brand/escudo.png"
+        alt="Cyber Valtorix"
+        width={compact ? 28 : 34}
+        height={compact ? 28 : 34}
+        priority
+        className="drop-shadow-sm"
+      />
+      <div className="leading-tight">
+        <div className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+          Estudio de Marcas
+        </div>
+        {!compact && (
+          <div className="eyebrow text-brand-gold">Cyber Valtorix</div>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+export function Sidebar({ user, runtime }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
 
   const isActive = (href: string) => {
+    if (href === "/audits") {
+      return pathname === "/audits" || (pathname?.startsWith("/audits/") && !pathname.startsWith("/audits/new"));
+    }
     return pathname === href || pathname?.startsWith(href + "/");
   };
 
+  const RuntimeIcon = runtime.environment === "vercel" ? Cloud : HardDrive;
+
   return (
-    <div className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
-      <div className="flex h-16 items-center gap-2 border-b border-border px-6">
-        <Zap className="h-6 w-6 text-primary" />
-        <span className="text-lg font-bold text-foreground">Phantom Reach</span>
-      </div>
-
-      <nav className="flex-1 space-y-1 px-3 py-6">
-        <div className="text-xs font-semibold uppercase text-muted-foreground mb-4">
-          Local Workspace
+    <>
+      {/* Barra superior translúcida en móvil */}
+      <header className="glass sticky top-0 z-40 border-b border-black/[0.06] md:hidden">
+        <div className="flex h-14 items-center justify-between px-4">
+          <BrandMark compact />
+          <nav className="flex items-center gap-1">
+            {navigation.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.name}
+                  className={cn(
+                    "press flex h-9 w-9 items-center justify-center rounded-full",
+                    active ? "bg-primary text-white" : "text-foreground/70 hover:bg-secondary",
+                  )}
+                >
+                  <item.icon className="h-[18px] w-[18px]" />
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-        {navigation.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <button
-              key={item.name}
-              onClick={() => {
-                router.push(item.href);
-                router.refresh();
-              }}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 text-left",
-                active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-              )}
-            >
-              <item.icon className="h-4 w-4 flex-shrink-0" />
-              <span>{item.name}</span>
-            </button>
-          );
-        })}
-      </nav>
+      </header>
 
-      <div className="border-t border-border p-4">
-        <div className="rounded-lg bg-secondary/30 p-3 border border-border/50">
-          <div className="flex items-center justify-between text-sm mb-2">
-            <span className="text-muted-foreground font-medium">Runtime</span>
-            <HardDrive className="h-4 w-4 text-primary" />
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Database</span>
-              <span className="font-semibold text-foreground">SQLite</span>
+      {/* Barra lateral en escritorio */}
+      <aside className="glass hidden h-full w-[264px] shrink-0 flex-col border-r border-black/[0.06] md:flex">
+        <div className="flex h-[72px] items-center px-5">
+          <BrandMark />
+        </div>
+
+        <nav className="flex-1 space-y-0.5 px-3 py-4">
+          <div className="eyebrow mb-2 px-3 text-muted-foreground">Espacio de trabajo</div>
+          {navigation.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "press flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[14px] font-medium",
+                  active
+                    ? "bg-primary text-primary-foreground shadow-[0_1px_2px_rgb(0_0_0/0.08)]"
+                    : "text-foreground/75 hover:bg-black/[0.04] hover:text-foreground",
+                )}
+              >
+                <item.icon className="h-[17px] w-[17px] shrink-0" />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="px-4 pb-3">
+          <div className="rounded-2xl border border-black/[0.05] bg-white/60 p-3.5">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="eyebrow text-muted-foreground">Entorno</span>
+              <RuntimeIcon className="h-4 w-4 text-primary" />
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Runs</span>
-              <span className="font-semibold text-foreground">Local</span>
-            </div>
-          </div>
-          <div className="mt-3 pt-2 border-t border-border/50">
-            <span className="inline-flex items-center rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
-              Unlimited local use
-            </span>
+            <dl className="space-y-1 text-[12px]">
+              <div className="flex justify-between text-muted-foreground">
+                <dt>Ejecución</dt>
+                <dd className="font-medium text-foreground">
+                  {runtime.environment === "vercel" ? "Vercel" : "Local"}
+                </dd>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <dt>Almacenamiento</dt>
+                <dd
+                  className={cn(
+                    "font-medium",
+                    runtime.storage === "sqlite-efimero" ? "text-amber-700" : "text-foreground",
+                  )}
+                >
+                  {STORAGE_LABEL[runtime.storage]}
+                </dd>
+              </div>
+            </dl>
           </div>
         </div>
-      </div>
 
-      <div className="border-t border-border p-4">
-        <div className="rounded-lg bg-muted/30 p-3">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
-              <span className="text-xs font-bold text-primary">L</span>
+        <div className="border-t border-black/[0.06] p-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-navy to-brand-blue text-[13px] font-semibold text-white">
+              {(user.name || "C").charAt(0).toUpperCase()}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {user.name || "Local Workspace"}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-medium text-foreground">
+                {user.name || "Espacio de trabajo"}
               </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {user.email}
-              </p>
+              <p className="truncate text-[12px] text-muted-foreground">{user.email}</p>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 }

@@ -2,49 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Sistema visual — Estudio de Marcas · Cyber Valtorix
+ * Lenguaje de diseño inspirado en Apple (tipografía del sistema, superficies
+ * translúcidas, radios generosos, sombras suaves, movimiento con resortes
+ * críticamente amortiguados) sobre la paleta de identidad Cyber Valtorix:
+ *   NAVY #1F3864 · BLUE #2E75B6 · GOLD #C09A3A · TEAL #17616E · DGRAY #404040
+ */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Marca (hex, para uso directo) */
+    --cv-navy: #1f3864;
+    --cv-blue: #2e75b6;
+    --cv-gold: #c09a3a;
+    --cv-teal: #17616e;
+    --cv-gray: #404040;
+    --cv-sky: #d5e8f0;
+    --cv-cream: #fff2cc;
+
+    /* Tokens semánticos (HSL para Tailwind) */
+    --background: 240 11% 97%;          /* #F5F5F7 */
+    --foreground: 240 3% 11%;           /* #1D1D1F */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 240 3% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 262 83% 58%;
-    --radius: 0.5rem;
+    --popover-foreground: 240 3% 11%;
+    --primary: 208 60% 45%;             /* BLUE #2E75B6 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 6% 94%;
+    --secondary-foreground: 219 53% 26%;
+    --muted: 240 6% 94%;
+    --muted-foreground: 240 2% 43%;     /* #6E6E73 */
+    --accent: 208 55% 95%;
+    --accent-foreground: 219 53% 26%;
+    --destructive: 2 79% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 6% 88%;
+    --input: 240 6% 86%;
+    --ring: 208 60% 45%;
+    --navy: 219 53% 26%;
+    --gold: 43 54% 49%;
+    --teal: 189 65% 26%;
+    --radius: 0.875rem;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 16px rgb(0 0 0 / 0.04);
+    --shadow-raised: 0 2px 6px rgb(0 0 0 / 0.06), 0 16px 40px rgb(31 56 100 / 0.10);
+    --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
   }
+
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 262 83% 58%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 96%;
+    --card: 240 3% 11%;
+    --card-foreground: 0 0% 96%;
+    --popover: 240 3% 11%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 208 70% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 3% 17%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 240 3% 17%;
+    --muted-foreground: 240 3% 65%;
+    --accent: 240 3% 17%;
+    --accent-foreground: 0 0% 96%;
+    --destructive: 2 79% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 3% 22%;
+    --input: 240 3% 24%;
+    --ring: 208 70% 58%;
   }
 }
 
@@ -52,8 +78,57 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
   body {
     @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+      system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-feature-settings: "kern", "liga", "calt";
+    font-optical-sizing: auto;
+    line-height: 1.5;
+    letter-spacing: -0.003em;
+  }
+  /* Tracking dependiente del tamaño: los titulares grandes se cierran. */
+  h1 { letter-spacing: -0.022em; line-height: 1.1; }
+  h2 { letter-spacing: -0.018em; line-height: 1.15; }
+  h3 { letter-spacing: -0.012em; line-height: 1.25; }
+  ::selection { background: rgb(46 117 182 / 0.2); }
+}
+
+@layer components {
+  /* Material translúcido para barras y paneles flotantes */
+  .glass {
+    background: rgb(255 255 255 / 0.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+  .glass-dark {
+    background: rgb(22 34 58 / 0.86);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    backdrop-filter: saturate(180%) blur(24px);
+  }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-raised { box-shadow: var(--shadow-raised); }
+
+  /* Respuesta inmediata al presionar (pointer-down), no al soltar */
+  .press {
+    transition: transform 160ms var(--ease-spring), box-shadow 200ms var(--ease-spring),
+      background-color 160ms ease, color 160ms ease, opacity 160ms ease;
+  }
+  .press:active:not(:disabled) { transform: scale(0.97); transition-duration: 80ms; }
+
+  .text-gradient-brand {
+    background: linear-gradient(135deg, var(--cv-navy) 0%, var(--cv-blue) 60%, #4ea3e6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase;
+    letter-spacing: 0.08em;
   }
 }
 
@@ -63,27 +138,52 @@
 }
 
 @keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes count-up-fade {
-  from { opacity: 0; transform: scale(0.8); }
+  from { opacity: 0; transform: scale(0.92); }
   to { opacity: 1; transform: scale(1); }
 }
 
+/* Curvas de resorte sin rebote (amortiguación crítica) */
 .animate-fade-in-up {
-  animation: fade-in-up 0.5s ease-out both;
+  animation: fade-in-up 0.5s var(--ease-spring) both;
 }
 
 .animate-score-appear {
-  animation: count-up-fade 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: count-up-fade 0.55s var(--ease-spring) both;
 }
 
 /* Staggered delays for children */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
-.stagger-6 { animation-delay: 0.6s; }
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+
+/* Accesibilidad: movimiento y transparencia reducidos */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  .press, .press:active { transform: none !important; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass { background: #ffffff; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .glass-dark { background: var(--cv-navy); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+@media (prefers-contrast: more) {
+  .glass { background: #ffffff; border-color: #1d1d1f !important; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+}

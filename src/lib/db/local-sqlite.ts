@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import { mkdirSync } from "fs";
-import { dirname, resolve } from "path";
+import { dirname, join, resolve } from "path";
+import { getDataDir } from "@/lib/runtime";
 import { randomUUID } from "crypto";
 import type {
   ApiUsage,
@@ -48,7 +49,7 @@ function normalizeDbPath(dbPath?: string): string {
   const fromEnv = process.env.DATABASE_URL?.startsWith("file:")
     ? process.env.DATABASE_URL.slice("file:".length)
     : undefined;
-  return resolve(dbPath ?? fromEnv ?? "./data/phantom-reach.db");
+  return resolve(dbPath ?? fromEnv ?? join(getDataDir(), "phantom-reach.db"));
 }
 
 function initSchema(sqlite: Database.Database): void {
@@ -130,7 +131,7 @@ function seedLocalWorkspace(sqlite: Database.Database): void {
   `).run({
     id: LOCAL_USER_ID,
     email: LOCAL_USER_EMAIL,
-    name: "Local Workspace",
+    name: "Espacio de trabajo local",
     audit_credits_remaining: LOCAL_CREDITS,
     scout_credits_remaining: LOCAL_CREDITS,
     white_label_config: "{}",

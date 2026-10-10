@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "src/app/api/audit/route.ts": { "maxDuration": 300 },
+    "src/app/api/scout/route.ts": { "maxDuration": 300 },
+    "src/app/api/report/[id]/pdf/route.ts": { "maxDuration": 60 },
+    "src/app/api/report/[id]/docx/route.ts": { "maxDuration": 60 },
+    "src/app/api/report/[id]/pptx/route.ts": { "maxDuration": 60 },
+    "src/app/api/report/[id]/xlsx/route.ts": { "maxDuration": 60 }
+  }
+}

@@ -4,6 +4,8 @@ import { generateReportPDF } from "@/lib/pdf/generate-pdf";
 import { sanitizeAuditResultContent } from "@/lib/reports/content-contract";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function GET(
   request: NextRequest,

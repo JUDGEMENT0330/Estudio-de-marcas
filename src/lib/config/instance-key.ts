@@ -2,8 +2,29 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
+import { getHomeDir, getKvConfig, isVercel } from "@/lib/runtime";
+
 function getPhantomHome(): string {
-  return process.env.PHANTOM_REACH_HOME || process.cwd();
+  return getHomeDir();
+}
+
+/**
+ * Llave explícita por variable de entorno (recomendada en Vercel):
+ * APP_ENCRYPTION_KEY = 64 caracteres hex (`openssl rand -hex 32`).
+ * Si no existe y hay KV en Vercel, se deriva de forma determinista del token
+ * KV para que todas las instancias puedan descifrar las mismas llaves.
+ */
+function keyFromEnvironment(): Buffer | undefined {
+  const explicit = process.env.APP_ENCRYPTION_KEY?.trim();
+  if (explicit) {
+    if (/^[a-f0-9]{64}$/i.test(explicit)) return Buffer.from(explicit, "hex");
+    return crypto.createHash("sha256").update(explicit).digest();
+  }
+  const kv = getKvConfig();
+  if (isVercel() && kv) {
+    return crypto.createHash("sha256").update(`estudio-de-marcas:${kv.token}`).digest();
+  }
+  return undefined;
 }
 
 export function getInstanceKeyPath(): string {
@@ -11,6 +32,9 @@ export function getInstanceKeyPath(): string {
 }
 
 export function loadInstanceKey(): Buffer {
+  const fromEnv = keyFromEnvironment();
+  if (fromEnv) return fromEnv;
+
   const keyPath = getInstanceKeyPath();
   const dir = path.dirname(keyPath);
 
@@ -26,7 +50,7 @@ export function loadInstanceKey(): Buffer {
   const hex = fs.readFileSync(keyPath, "utf8").trim();
   if (!/^[a-f0-9]{64}$/i.test(hex)) {
     throw new Error(
-      "Invalid Phantom Reach instance key. Delete .phantom-reach/instance.key and re-enter saved keys."
+      "Llave de instancia inválida. Elimina .phantom-reach/instance.key y vuelve a ingresar las llaves guardadas."
     );
   }
 

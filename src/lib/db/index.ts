@@ -1,6 +1,6 @@
 export * from "./types";
 
-import { createLocalSqliteDb } from "./local-sqlite";
+import { getStorageBackend } from "@/lib/runtime";
 import type {
   User,
   Report,
@@ -16,8 +16,9 @@ import type {
 // ---------------------------------------------------------------------------
 // Unified DB interface
 // ---------------------------------------------------------------------------
-// Active local app calls go through SQLite. The interface stays stable so app
-// routes and report pages do not need to know which storage backend is used.
+// Local: SQLite (./data). Vercel: Redis/KV persistente si está configurado
+// (KV_REST_API_URL + KV_REST_API_TOKEN o UPSTASH_REDIS_REST_*); si no, SQLite
+// efímero en /tmp. Las rutas no necesitan saber qué backend está activo.
 // ---------------------------------------------------------------------------
 
 export interface DbInterface {
@@ -74,11 +75,21 @@ export interface DbInterface {
 let _db: DbInterface | null = null;
 
 /**
- * Returns the unified database interface backed by local SQLite.
+ * Devuelve la interfaz de base de datos según el entorno (KV o SQLite).
+ * Los módulos se cargan de forma diferida para no inicializar el binario
+ * nativo de SQLite cuando se usa KV en Vercel.
  */
 export function getDb(): DbInterface {
   if (_db) return _db;
-  _db = createLocalSqliteDb();
+  if (getStorageBackend() === "kv") {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createKvDb } = require("./kv-store") as typeof import("./kv-store");
+    _db = createKvDb();
+  } else {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createLocalSqliteDb } = require("./local-sqlite") as typeof import("./local-sqlite");
+    _db = createLocalSqliteDb();
+  }
   return _db;
 }
 

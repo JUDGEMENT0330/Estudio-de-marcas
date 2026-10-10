@@ -5,6 +5,8 @@ import { requireRouteUser } from "@/lib/auth/route";
 import { runScoutPipeline } from "@/lib/agents/scout-orchestrator";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 300;
 
 const scoutRequestSchema = z.object({
   city: z.string().min(1, "City is required"),

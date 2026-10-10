@@ -91,10 +91,10 @@ const AVG_TICKET_VALUE: Record<string, { low: number; mid: number; high: number 
 };
 
 function scoreToGradeLabel(score: number): string {
-  if (score >= 80) return "Strong";
-  if (score >= 60) return "Solid";
-  if (score >= 40) return "Developing";
-  return "Needs Attention";
+  if (score >= 80) return "Fuerte";
+  if (score >= 60) return "Sólido";
+  if (score >= 40) return "En desarrollo";
+  return "Requiere atención";
 }
 
 function getTicketValue(category?: string) {

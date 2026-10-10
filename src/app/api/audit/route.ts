@@ -1,13 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireRouteUser } from "@/lib/auth/route";
 import { runAuditPipeline } from "@/lib/agents/orchestrator";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+// En Vercel la auditoría sigue corriendo tras responder (vía `after`), dentro
+// del límite de duración de la función. 300 s es el máximo del plan Hobby con
+// Fluid Compute; en Pro puede subirse hasta 800 en vercel.json.
+export const maxDuration = 300;
 
 const auditRequestSchema = z.object({
-  businessName: z.string().min(1, "Business name is required"),
+  businessName: z.string().min(1, "El nombre del negocio es obligatorio"),
   city: z.string().optional(),
   state: z.string().optional(),
   url: z.string().url().optional().or(z.literal("")),
@@ -22,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid input", details: parsed.error.flatten() },
+        { error: "Datos inválidos", details: parsed.error.flatten() },
         { status: 400 }
       );
     }
@@ -37,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     if (user.audit_credits_remaining <= 0) {
       return NextResponse.json(
-        { error: "No audit credits remaining. Please upgrade your plan." },
+        { error: "No quedan créditos de auditoría." },
         { status: 403 }
       );
     }
@@ -68,8 +73,9 @@ export async function POST(request: NextRequest) {
     // The audit page polls /api/report/{id} until status flips to completed.
     await db.updateReport(report.id, { status: "processing" });
 
-    // Run pipeline in background — DO NOT await
-    runAuditPipeline({
+    // Ejecutar en segundo plano. `after` mantiene viva la función en Vercel
+    // hasta que termina el pipeline; en local se comporta igual.
+    after(() => runAuditPipeline({
       businessName: input.businessName,
       city: input.city,
       state: input.state,
@@ -90,7 +96,7 @@ export async function POST(request: NextRequest) {
           status: "failed",
         });
         console.error(`[api/audit] Pipeline failed for report ${report.id}:`, pipelineError.message);
-      });
+      }));
 
     // Return immediately so the client can navigate to the progress page
     return NextResponse.json({
@@ -100,7 +106,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (err: any) {
     return NextResponse.json(
-      { error: "Internal server error", message: err.message },
+      { error: "Error interno del servidor", message: err.message },
       { status: 500 }
     );
   }

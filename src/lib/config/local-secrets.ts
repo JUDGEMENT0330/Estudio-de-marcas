@@ -3,6 +3,11 @@ import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { decryptSecret, encryptSecret } from "./crypto";
 import { loadInstanceKey } from "./instance-key";
+import { getDataDir, getStorageBackend } from "@/lib/runtime";
+import { kvCommand } from "@/lib/kv/client";
+
+const KV_SECRETS_KEY = `${process.env.KV_PREFIX?.trim() || "edm"}:secrets`;
+const useKv = () => getStorageBackend() === "kv";
 
 export type LocalSecretKey =
   | "google_places_api_key"
@@ -54,7 +59,7 @@ function resolveDbPath(): string {
     return process.env.DATABASE_URL.slice("file:".length);
   }
 
-  return join(process.cwd(), "data", "phantom-reach.local.sqlite");
+  return join(getDataDir(), "phantom-reach.local.sqlite");
 }
 
 function getSecretsDatabase(): Database.Database {
@@ -121,9 +126,18 @@ function rowToMetadata(row: SecretRow): SecretMetadata {
       status: "needs_attention",
       lastTestedAt: row.last_tested_at || undefined,
       lastTestStatus: "needs_attention",
-      lastTestMessage: "This saved key could not be read. Delete and re-enter it.",
+      lastTestMessage: "No se pudo leer esta llave guardada. Elimínala y vuelve a ingresarla.",
     };
   }
+}
+
+async function kvReadRow(key: LocalSecretKey): Promise<SecretRow | undefined> {
+  const raw = await kvCommand<string | null>("HGET", KV_SECRETS_KEY, key);
+  return raw ? (JSON.parse(raw) as SecretRow) : undefined;
+}
+
+async function kvWriteRow(row: SecretRow): Promise<void> {
+  await kvCommand("HSET", KV_SECRETS_KEY, row.key, JSON.stringify(row));
 }
 
 export async function setSecret(
@@ -132,9 +146,23 @@ export async function setSecret(
   provider: string,
   value: string
 ): Promise<void> {
+  const encrypted = encryptSecret(value, loadInstanceKey());
+  if (useKv()) {
+    await kvWriteRow({
+      key,
+      provider,
+      label,
+      encrypted_value: encrypted.encryptedValue,
+      iv: encrypted.iv,
+      auth_tag: encrypted.authTag,
+      last_tested_at: null,
+      last_test_status: null,
+      last_test_message: null,
+    });
+    return;
+  }
   ensureTable();
   const now = new Date().toISOString();
-  const encrypted = encryptSecret(value, loadInstanceKey());
 
   getSecretsDatabase()
     .prepare(`
@@ -158,10 +186,15 @@ export async function setSecret(
 }
 
 export async function getSecret(key: LocalSecretKey): Promise<string | undefined> {
-  ensureTable();
-  const row = getSecretsDatabase()
-    .prepare("SELECT * FROM local_secrets WHERE key = ?")
-    .get(key) as SecretRow | undefined;
+  let row: SecretRow | undefined;
+  if (useKv()) {
+    row = await kvReadRow(key);
+  } else {
+    ensureTable();
+    row = getSecretsDatabase()
+      .prepare("SELECT * FROM local_secrets WHERE key = ?")
+      .get(key) as SecretRow | undefined;
+  }
 
   if (!row) return undefined;
 
@@ -172,11 +205,22 @@ export async function getSecret(key: LocalSecretKey): Promise<string | undefined
 }
 
 export async function deleteSecret(key: LocalSecretKey): Promise<void> {
+  if (useKv()) {
+    await kvCommand("HDEL", KV_SECRETS_KEY, key);
+    return;
+  }
   ensureTable();
   getSecretsDatabase().prepare("DELETE FROM local_secrets WHERE key = ?").run(key);
 }
 
 export async function listSecretMetadata(): Promise<SecretMetadata[]> {
+  if (useKv()) {
+    const raw = await kvCommand<string[] | null>("HVALS", KV_SECRETS_KEY);
+    return (raw ?? [])
+      .map((value) => JSON.parse(value) as SecretRow)
+      .sort((a, b) => `${a.provider}${a.label}`.localeCompare(`${b.provider}${b.label}`))
+      .map(rowToMetadata);
+  }
   ensureTable();
   const rows = getSecretsDatabase()
     .prepare("SELECT * FROM local_secrets ORDER BY provider, label")
@@ -190,8 +234,20 @@ export async function updateSecretTestStatus(
   status: SecretStatus,
   message: string
 ): Promise<void> {
-  ensureTable();
   const now = new Date().toISOString();
+  if (useKv()) {
+    const row = await kvReadRow(key);
+    if (row) {
+      await kvWriteRow({
+        ...row,
+        last_tested_at: now,
+        last_test_status: status,
+        last_test_message: message,
+      });
+    }
+    return;
+  }
+  ensureTable();
   getSecretsDatabase()
     .prepare(`
       UPDATE local_secrets
