@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * debe cambiar sola al modelo sugerido o al mejor Flash disponible.
  */
 const generateContent = vi.fn();
-vi.mock("@google/genai", () => ({
+vi.mock("@google/genai", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@google/genai")>()),
   GoogleGenAI: class {
     models = { generateContent };
   },
@@ -20,7 +21,7 @@ const RETIRED = JSON.stringify({
   },
 });
 
-describe("Gemini: modelo retirado", () => {
+describe("Gemini: modelos nuevos y retirados", () => {
   afterEach(() => {
     generateContent.mockReset();
     delete process.env.GOOGLE_AI_API_KEY;
@@ -66,5 +67,29 @@ describe("Gemini: modelo retirado", () => {
     generateContent.mockResolvedValue({ text: "ok", candidates: [] });
     await googleProvider.complete({ prompt: "x" });
     expect(generateContent.mock.calls[0][0].model).toBe("gemini-flash-latest");
+  });
+
+  it("conserva thoughtSignature al reenviar las llamadas a herramientas (Gemini 3)", async () => {
+    process.env.GOOGLE_AI_API_KEY = "test-key";
+    const { googleProvider, resetGoogleClient } = await import("@/lib/ai/providers/google");
+    resetGoogleClient();
+    const call = { id: "call-1", name: "fetch_webpage", args: { url: "https://example.com" } };
+    generateContent
+      .mockResolvedValueOnce({
+        functionCalls: [call],
+        candidates: [{ content: { role: "model", parts: [{ functionCall: call, thoughtSignature: "firma-123" }] } }],
+      })
+      .mockResolvedValueOnce({ text: "listo", functionCalls: [], candidates: [] });
+
+    const result = await googleProvider.completeWithTools({
+      prompt: "x",
+      tools: [{ name: "fetch_webpage", description: "d", input_schema: { type: "object", properties: { url: { type: "string" } } } }],
+      executeTools: async () => "contenido",
+    });
+
+    expect(result.text).toBe("listo");
+    const second = generateContent.mock.calls[1][0].contents;
+    expect(second[1].parts[0].thoughtSignature).toBe("firma-123");
+    expect(second[2].parts[0].functionResponse).toMatchObject({ id: "call-1", name: "fetch_webpage" });
   });
 });

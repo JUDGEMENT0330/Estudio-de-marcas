@@ -370,11 +370,15 @@ class GoogleProvider implements LLMProvider {
       // Check if the model wants to call functions
       const functionCalls = response.functionCalls;
       if (functionCalls && functionCalls.length > 0) {
-        // Add model's response (with function calls) to conversation
-        contents.push({
-          role: "model",
-          parts: functionCalls.map((fc: any) => ({ functionCall: fc })),
-        });
+        // Se reenvía el turno del modelo tal cual: los modelos Gemini 3 exigen
+        // que cada functionCall conserve su thoughtSignature (si se rearman las
+        // partes, la API responde 400 "missing a thought_signature").
+        const modelContent = response.candidates?.[0]?.content;
+        contents.push(
+          modelContent?.parts?.length
+            ? { role: "model", parts: modelContent.parts }
+            : { role: "model", parts: functionCalls.map((fc: any) => ({ functionCall: fc })) },
+        );
 
         // Execute each function call and build response parts
         const functionResponseParts: any[] = [];
@@ -397,6 +401,7 @@ class GoogleProvider implements LLMProvider {
 
           functionResponseParts.push({
             functionResponse: {
+              ...(fc.id ? { id: fc.id } : {}),
               name: functionName,
               response: { result },
             },
