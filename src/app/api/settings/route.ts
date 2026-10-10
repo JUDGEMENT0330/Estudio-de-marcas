@@ -33,7 +33,7 @@ export async function GET() {
   } catch (error) {
     console.error("Settings GET error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch settings" },
+      { error: "No se pudo obtener la configuración" },
       { status: 500 },
     );
   }
@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid input", details: parsed.error.flatten() },
+        { error: "Datos inválidos", details: parsed.error.flatten() },
         { status: 400 },
       );
     }
@@ -69,12 +69,12 @@ export async function PUT(request: NextRequest) {
       name: updated?.name,
       white_label_config: updated?.white_label_config || {},
       widget_api_key: updated?.widget_api_key,
-      message: "Settings updated successfully",
+      message: "Configuración actualizada",
     });
   } catch (error) {
     console.error("Settings PUT error:", error);
     return NextResponse.json(
-      { error: "Failed to update settings", details: String(error) },
+      { error: "No se pudo actualizar la configuración", details: String(error) },
       { status: 500 },
     );
   }

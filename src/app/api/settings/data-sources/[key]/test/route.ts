@@ -22,12 +22,12 @@ async function testGooglePlaces(value: string): Promise<string> {
     `https://maps.googleapis.com/maps/api/place/textsearch/json?${params}`,
     { signal: AbortSignal.timeout(8000) }
   );
-  if (!response.ok) throw new Error(`Google Places returned ${response.status}`);
+  if (!response.ok) throw new Error(`Google Places respondió con estado ${response.status}`);
   const data = await response.json();
   if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
     throw new Error(`Google Places status: ${data.status}`);
   }
-  return "Google Places responded successfully.";
+  return "Google Places respondió correctamente.";
 }
 
 async function testPageSpeed(value: string): Promise<string> {
@@ -40,8 +40,8 @@ async function testPageSpeed(value: string): Promise<string> {
     `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params}`,
     { signal: AbortSignal.timeout(12000) }
   );
-  if (!response.ok) throw new Error(`PageSpeed returned ${response.status}`);
-  return "PageSpeed responded successfully.";
+  if (!response.ok) throw new Error(`PageSpeed respondió con estado ${response.status}`);
+  return "PageSpeed respondió correctamente.";
 }
 
 async function testCrux(value: string): Promise<string> {
@@ -55,13 +55,13 @@ async function testCrux(value: string): Promise<string> {
     }
   );
 
-  if (response.status === 404) return "Chrome UX Report API responded successfully.";
+  if (response.status === 404) return "La API de Chrome UX Report respondió correctamente.";
   if (!response.ok) {
     const data = await response.json().catch(() => null);
     const message = data?.error?.message ? `: ${data.error.message}` : "";
-    throw new Error(`Chrome UX Report returned ${response.status}${message}`);
+    throw new Error(`Chrome UX Report respondió con estado ${response.status}${message}`);
   }
-  return "Chrome UX Report responded successfully.";
+  return "Chrome UX Report respondió correctamente.";
 }
 
 async function testCensus(value: string): Promise<string> {
@@ -73,12 +73,12 @@ async function testCensus(value: string): Promise<string> {
   const response = await fetch(`https://api.census.gov/data/2022/acs/acs5?${params}`, {
     signal: AbortSignal.timeout(8000),
   });
-  if (!response.ok) throw new Error(`US Census returned ${response.status}`);
+  if (!response.ok) throw new Error(`US Census respondió con estado ${response.status}`);
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.toLowerCase().includes("json")) {
-    throw new Error("US Census returned a non-JSON response. Check the API key.");
+    throw new Error("US Census devolvió una respuesta no válida. Revisa la llave.");
   }
-  return "US Census responded successfully.";
+  return "US Census respondió correctamente.";
 }
 
 async function testOpenCorporates(value: string): Promise<string> {
@@ -91,8 +91,8 @@ async function testOpenCorporates(value: string): Promise<string> {
   const response = await fetch(`https://api.opencorporates.com/v0.4/companies/search?${params}`, {
     signal: AbortSignal.timeout(8000),
   });
-  if (!response.ok) throw new Error(`OpenCorporates returned ${response.status}`);
-  return "OpenCorporates responded successfully.";
+  if (!response.ok) throw new Error(`OpenCorporates respondió con estado ${response.status}`);
+  return "OpenCorporates respondió correctamente.";
 }
 
 async function testYelp(value: string): Promise<string> {
@@ -104,8 +104,8 @@ async function testYelp(value: string): Promise<string> {
     headers: { Authorization: `Bearer ${value}` },
     signal: AbortSignal.timeout(8000),
   });
-  if (!response.ok) throw new Error(`Yelp returned ${response.status}`);
-  return "Yelp responded successfully.";
+  if (!response.ok) throw new Error(`Yelp respondió con estado ${response.status}`);
+  return "Yelp respondió correctamente.";
 }
 
 async function testAiKey(key: LocalSecretKey, value: string): Promise<string> {
@@ -114,8 +114,8 @@ async function testAiKey(key: LocalSecretKey, value: string): Promise<string> {
       headers: { Authorization: `Bearer ${value}` },
       signal: AbortSignal.timeout(8000),
     });
-    if (!response.ok) throw new Error(`OpenAI returned ${response.status}`);
-    return "OpenAI responded successfully.";
+    if (!response.ok) throw new Error(`OpenAI respondió con estado ${response.status}`);
+    return "OpenAI respondió correctamente.";
   }
 
   if (key === "anthropic_api_key") {
@@ -133,8 +133,8 @@ async function testAiKey(key: LocalSecretKey, value: string): Promise<string> {
       }),
       signal: AbortSignal.timeout(12000),
     });
-    if (!response.ok) throw new Error(`Anthropic returned ${response.status}`);
-    return "Anthropic responded successfully.";
+    if (!response.ok) throw new Error(`Anthropic respondió con estado ${response.status}`);
+    return "Anthropic respondió correctamente.";
   }
 
   if (key === "google_ai_api_key") {
@@ -142,11 +142,11 @@ async function testAiKey(key: LocalSecretKey, value: string): Promise<string> {
       `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(value)}`,
       { signal: AbortSignal.timeout(8000) }
     );
-    if (!response.ok) throw new Error(`Gemini returned ${response.status}`);
-    return "Gemini responded successfully.";
+    if (!response.ok) throw new Error(`Gemini respondió con estado ${response.status}`);
+    return "Gemini respondió correctamente.";
   }
 
-  return "No live test is needed for this setting.";
+  return "Esta opción no necesita prueba de conexión.";
 }
 
 async function runProviderTest(key: LocalSecretKey, value: string): Promise<string> {
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const { key } = await context.params;
   const definition = getProviderDefinition(key as LocalSecretKey);
   if (!definition) {
-    return NextResponse.json({ error: `Unknown data source: ${key}` }, { status: 404 });
+    return NextResponse.json({ error: `Fuente de datos desconocida: ${key}` }, { status: 404 });
   }
 
   const body = await request.json().catch(() => null);
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const savedValue = submittedValue || (await getSecret(definition.key));
 
   if (!savedValue) {
-    return NextResponse.json({ error: "Enter a key before testing." }, { status: 400 });
+    return NextResponse.json({ error: "Ingresa una llave antes de probar." }, { status: 400 });
   }
 
   if (submittedValue) {
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     message = await runProviderTest(definition.key, savedValue);
   } catch (error) {
     status = "invalid";
-    message = error instanceof Error ? error.message : "Connection test failed.";
+    message = error instanceof Error ? error.message : "La prueba de conexión falló.";
   }
 
   await updateSecretTestStatus(definition.key, status, message);

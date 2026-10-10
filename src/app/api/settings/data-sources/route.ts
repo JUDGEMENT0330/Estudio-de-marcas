@@ -8,7 +8,7 @@ export async function GET() {
   } catch (error) {
     console.error("[data-sources] list failed:", error);
     return NextResponse.json(
-      { error: "Failed to load data sources" },
+      { error: "No se pudieron cargar las fuentes de datos" },
       { status: 500 }
     );
   }

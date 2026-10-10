@@ -1,3 +1,4 @@
+import { placesCountryComponents, placesLanguage } from "@/lib/geo/places";
 import { NextRequest, NextResponse } from "next/server";
 import { getProviderSecret } from "@/lib/config/provider-config";
 
@@ -90,9 +91,10 @@ async function googlePlacesCityAutocomplete(
     input: query,
     types: "(cities)",
     key: apiKey,
-    language: "en",
-    components: "country:us",
+    language: placesLanguage(),
   });
+  const components = placesCountryComponents();
+  if (components) params.set("components", components);
 
   if (sessionToken) {
     params.set("sessiontoken", sessionToken);
@@ -104,7 +106,7 @@ async function googlePlacesCityAutocomplete(
   );
 
   if (!response.ok) {
-    throw new Error(`Google Places API returned ${response.status}`);
+    throw new Error(`Google Places API respondió con estado ${response.status}`);
   }
 
   const data = await response.json();
@@ -134,7 +136,9 @@ async function googlePlacesCityAutocomplete(
         stateCode: parsed.stateCode,
         label: parsed.stateCode
           ? `${parsed.city}, ${parsed.stateCode}`
-          : parsed.city,
+          : parsed.state
+            ? `${parsed.city}, ${parsed.state}`
+            : parsed.city,
       };
     }
   );
@@ -203,7 +207,7 @@ async function fetchFromSerpApi(
   );
 
   if (!response.ok) {
-    throw new Error(`SerpAPI returned ${response.status}`);
+    throw new Error(`SerpAPI respondió con estado ${response.status}`);
   }
 
   const data = await response.json();

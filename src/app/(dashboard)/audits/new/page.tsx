@@ -107,10 +107,10 @@ export default function NewAuditPage() {
         const data = await res.json();
 
         return (data.suggestions || []).map(
-          (s: { city: string; stateCode: string; state: string }) => ({
-            label: `${s.city}, ${s.stateCode}`,
+          (s: { city: string; stateCode: string; state: string; label?: string }) => ({
+            label: s.label || [s.city, s.stateCode || s.state].filter(Boolean).join(", "),
             sublabel: s.state,
-            data: { city: s.city, stateCode: s.stateCode },
+            data: { city: s.city, stateCode: s.stateCode || s.state },
           })
         );
       } catch {

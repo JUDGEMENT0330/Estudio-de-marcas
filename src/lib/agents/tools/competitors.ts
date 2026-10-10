@@ -1,3 +1,4 @@
+import { placesLanguage } from "@/lib/geo/places";
 /**
  * Module 7: Competitive Comparison Panel
  * Tool: search_competitors
@@ -106,7 +107,7 @@ async function findNearbyCompetitors(
     location: `${lat},${lng}`,
     radius: "5000",
     key: apiKey,
-    language: "en",
+    language: placesLanguage(),
   });
 
   if (googleType) {
@@ -138,7 +139,7 @@ async function textSearchCompetitors(
   const params = new URLSearchParams({
     query,
     key: apiKey,
-    language: "en",
+    language: placesLanguage(),
   });
 
   const res = await fetch(
@@ -193,7 +194,7 @@ async function searchWithPhase0Queries(
       const params = new URLSearchParams({
         query,
         key: apiKey,
-        language: "en",
+        language: placesLanguage(),
       });
 
       try {

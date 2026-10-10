@@ -93,7 +93,7 @@ describe("data sources settings API", () => {
 
     expect(response.status).toBe(200);
     expect(body.status).toBe("connected");
-    expect(body.message).toContain("responded");
+    expect(body.message).toContain("respondió");
     expect(JSON.stringify(body)).not.toContain("google-key-to-test");
   });
 });

@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(filtered);
   } catch (err: any) {
     return NextResponse.json(
-      { error: "Failed to fetch reports", message: err.message },
+      { error: "No se pudieron obtener los reportes", message: err.message },
       { status: 500 }
     );
   }

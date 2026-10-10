@@ -1,3 +1,4 @@
+import { placesCountryComponents, placesLanguage } from "@/lib/geo/places";
 import { NextRequest, NextResponse } from "next/server";
 import { getProviderSecret } from "@/lib/config/provider-config";
 
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
     unavailable: {
       status: "missing_api_key",
       source: "business_autocomplete",
-      reason: "Set GOOGLE_PLACES_API_KEY to collect real business suggestions.",
+      reason: "Configura GOOGLE_PLACES_API_KEY para obtener sugerencias reales de negocios.",
     },
   });
 }
@@ -85,9 +86,10 @@ async function googlePlacesAutocomplete(
     input,
     types: "establishment",
     key: apiKey,
-    language: "en",
-    components: "country:us",
+    language: placesLanguage(),
   });
+  const components = placesCountryComponents();
+  if (components) params.set("components", components);
 
   // Session tokens group autocomplete + place details into one billing session
   // ($0.017 total instead of $0.00283 + $0.017 separately)
@@ -101,7 +103,7 @@ async function googlePlacesAutocomplete(
   );
 
   if (!response.ok) {
-    throw new Error(`Google Places API returned ${response.status}`);
+    throw new Error(`Google Places API respondió con estado ${response.status}`);
   }
 
   const data = await response.json();

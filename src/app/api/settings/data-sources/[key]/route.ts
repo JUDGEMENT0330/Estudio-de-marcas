@@ -19,13 +19,13 @@ async function resolveDefinition(context: RouteContext) {
 export async function PUT(request: NextRequest, context: RouteContext) {
   const { key, definition } = await resolveDefinition(context);
   if (!definition) {
-    return NextResponse.json({ error: `Unknown data source: ${key}` }, { status: 404 });
+    return NextResponse.json({ error: `Fuente de datos desconocida: ${key}` }, { status: 404 });
   }
 
   const body = await request.json().catch(() => null);
   const value = typeof body?.value === "string" ? body.value.trim() : "";
   if (!value) {
-    return NextResponse.json({ error: "Enter a key before saving." }, { status: 400 });
+    return NextResponse.json({ error: "Ingresa una llave antes de guardar." }, { status: 400 });
   }
 
   await setSecret(definition.key, definition.label, definition.provider, value);
@@ -35,7 +35,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   const { key, definition } = await resolveDefinition(context);
   if (!definition) {
-    return NextResponse.json({ error: `Unknown data source: ${key}` }, { status: 404 });
+    return NextResponse.json({ error: `Fuente de datos desconocida: ${key}` }, { status: 404 });
   }
 
   await deleteSecret(definition.key);

@@ -1,3 +1,4 @@
+import { placesLanguage } from "@/lib/geo/places";
 import { NextRequest, NextResponse } from "next/server";
 import { getProviderSecret } from "@/lib/config/provider-config";
 
@@ -91,7 +92,7 @@ async function fetchGooglePlaceDetails(
     place_id: placeId,
     fields,
     key: apiKey,
-    language: "en",
+    language: placesLanguage(),
   });
 
   // Include session token to group with autocomplete request
@@ -105,7 +106,7 @@ async function fetchGooglePlaceDetails(
   );
 
   if (!response.ok) {
-    throw new Error(`Google Place Details returned ${response.status}`);
+    throw new Error(`Google Place Details respondió con estado ${response.status}`);
   }
 
   const data = await response.json();

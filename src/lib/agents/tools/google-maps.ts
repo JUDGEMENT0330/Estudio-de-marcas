@@ -1,3 +1,4 @@
+import { placesLanguage } from "@/lib/geo/places";
 /**
  * Module 1: Google Business Profile Health
  * Tool: lookup_google_maps
@@ -46,7 +47,7 @@ async function textSearch(
   const params = new URLSearchParams({
     query,
     key: apiKey,
-    language: "en",
+    language: placesLanguage(),
   });
 
   const res = await fetch(
@@ -89,7 +90,7 @@ async function placeDetails(
     place_id: placeId,
     fields,
     key: apiKey,
-    language: "en",
+    language: placesLanguage(),
   });
 
   const res = await fetch(

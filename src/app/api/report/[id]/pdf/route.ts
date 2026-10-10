@@ -26,7 +26,7 @@ export async function GET(
     const report = ownedReport.report;
 
     if (report.status !== "completed" || !report.result) {
-      return NextResponse.json({ error: "Report not ready" }, { status: 400 });
+      return NextResponse.json({ error: "El reporte aún no está listo" }, { status: 400 });
     }
 
     const exportReport = report.type === "audit"
@@ -46,7 +46,7 @@ export async function GET(
   } catch (err: any) {
     console.error("PDF generation error:", err);
     return NextResponse.json(
-      { error: "PDF generation failed", message: err.message },
+      { error: "No se pudo generar el PDF", message: err.message },
       { status: 500 }
     );
   }

@@ -12,7 +12,7 @@ describe("data source setup help", () => {
       docsUrl: "https://api.census.gov/data/key_signup.html",
       envVar: "CENSUS_API_KEY",
     });
-    expect(census?.setup?.steps.join(" ")).toContain("Request a key");
+    expect(census?.setup?.steps.join(" ")).toContain("Solicita una llave");
 
     expect(openCorporates?.setup).toMatchObject({
       docsUrl: "https://api.opencorporates.com/documentation/API-Reference",

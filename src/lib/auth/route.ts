@@ -22,13 +22,13 @@ export async function requireOwnedReport(
 
   if (!report) {
     return {
-      response: NextResponse.json({ error: "Report not found" }, { status: 404 }),
+      response: NextResponse.json({ error: "Reporte no encontrado" }, { status: 404 }),
     };
   }
 
   if (report.user_id !== userId) {
     return {
-      response: NextResponse.json({ error: "Report not found" }, { status: 404 }),
+      response: NextResponse.json({ error: "Reporte no encontrado" }, { status: 404 }),
     };
   }
 
