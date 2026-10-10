@@ -24,7 +24,88 @@ import type {
 // Model constant — single frontier model
 // ---------------------------------------------------------------------------
 
-const MODEL = process.env.GOOGLE_AI_MODEL || "gemini-2.5-flash";
+// Alias que Google mantiene apuntando al modelo Flash vigente. Evita que la app
+// se rompa cuando Google retira una versión concreta (p. ej. gemini-2.5-flash).
+// GOOGLE_AI_MODEL permite fijar un modelo específico.
+const DEFAULT_MODEL = "gemini-flash-latest";
+
+/** Modelo en uso; cambia si Google retira el configurado. */
+let _activeModel: string | undefined;
+
+function currentModel(): string {
+  return _activeModel ?? (process.env.GOOGLE_AI_MODEL?.trim() || DEFAULT_MODEL);
+}
+
+/** ¿El error indica que el modelo ya no existe o no está disponible? */
+export function isModelUnavailableError(error: unknown): boolean {
+  const status = (error as { status?: number; code?: number })?.status ?? (error as { code?: number })?.code;
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    status === 404 ||
+    /NOT_FOUND|no longer available|is not found|not supported for generateContent|does not exist/i.test(message)
+  );
+}
+
+/** Modelo que Google sugiere en el mensaje de error ("use models/gemini-…"). */
+export function suggestedModelFromError(error: unknown): string | undefined {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.match(/use\s+models\/(gemini-[\w.-]+)/i)?.[1];
+}
+
+/**
+ * Elige el mejor modelo Flash disponible para esta llave: soporta
+ * generateContent, sin variantes experimentales/preview/lite/tts/imagen, y con
+ * el número de versión más alto.
+ */
+export function pickBestFlashModel(names: string[]): string | undefined {
+  const version = (name: string) => Number(name.match(/gemini-(\d+(?:\.\d+)?)/)?.[1] ?? 0);
+  return names
+    .map((name) => name.replace(/^models\//, ""))
+    .filter((name) => /^gemini-[\d.]+-flash$/.test(name) || name === "gemini-flash-latest")
+    .sort((a, b) => (a === "gemini-flash-latest" ? -1 : b === "gemini-flash-latest" ? 1 : version(b) - version(a)))[0];
+}
+
+async function discoverModel(): Promise<string | undefined> {
+  const apiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey || process.env.GOOGLE_VERTEX_PROJECT) return undefined;
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${encodeURIComponent(apiKey)}`,
+      { signal: AbortSignal.timeout(8000) },
+    );
+    if (!res.ok) return undefined;
+    const data = (await res.json()) as { models?: { name: string; supportedGenerationMethods?: string[] }[] };
+    return pickBestFlashModel(
+      (data.models ?? []).filter((m) => m.supportedGenerationMethods?.includes("generateContent")).map((m) => m.name),
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Llama a generateContent con el modelo actual. Si Google responde que el
+ * modelo ya no está disponible, cambia al sugerido (o al mejor Flash de la
+ * cuenta) y reintenta una vez.
+ */
+async function generateWithFallback(
+  client: GoogleGenAI,
+  params: Omit<Parameters<GoogleGenAI["models"]["generateContent"]>[0], "model">,
+) {
+  const model = currentModel();
+  try {
+    return await client.models.generateContent({ ...params, model });
+  } catch (error) {
+    if (!isModelUnavailableError(error)) throw error;
+    const replacement = [suggestedModelFromError(error), await discoverModel(), DEFAULT_MODEL].find(
+      (candidate) => candidate && candidate !== model,
+    );
+    if (!replacement) throw error;
+    console.warn(`[ai/google] El modelo "${model}" no está disponible; se usará "${replacement}".`);
+    _activeModel = replacement;
+    return client.models.generateContent({ ...params, model: replacement });
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Singleton client
@@ -66,6 +147,7 @@ function getClient(): GoogleGenAI | null {
 /** Reset the singleton (used when auth config changes at runtime). */
 export function resetGoogleClient(): void {
   _client = undefined;
+  _activeModel = undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -161,8 +243,7 @@ class GoogleProvider implements LLMProvider {
       temperature = 0.3,
     } = req;
 
-    const response = await client.models.generateContent({
-      model: MODEL,
+    const response = await generateWithFallback(client, {
       contents: prompt,
       config: {
         ...(system ? { systemInstruction: system } : {}),
@@ -269,14 +350,14 @@ class GoogleProvider implements LLMProvider {
     let totalOutputTokens = 0;
 
     for (let turn = 0; turn < maxTurns; turn++) {
-      const response = await client.models.generateContent({
-        model: MODEL,
+      const response = await generateWithFallback(client, {
         contents,
         config: {
           ...(system ? { systemInstruction: system } : {}),
           maxOutputTokens: maxTokens,
           temperature,
-          tools: geminiTools,
+          // Gemini rechaza una lista de funciones vacía.
+          ...(tools.length ? { tools: geminiTools } : {}),
         },
       });
 

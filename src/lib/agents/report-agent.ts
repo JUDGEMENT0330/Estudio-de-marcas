@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { completeWithTools } from "@/lib/ai/claude";
+import { complete, completeWithTools } from "@/lib/ai/claude";
 import { syncAIConfigFromSecrets } from "@/lib/ai/runtime-config";
 import { AGENTIC_TOOL_DEFINITIONS, executeAgenticTool } from "@/lib/agents/tools/agentic-tools";
 import { buildDocContent } from "@/lib/exports/doc-content";
@@ -169,15 +169,19 @@ export async function runReportAgent(report: Report, taskId: string, customInstr
   if (!instruction) throw new Error("Indica qué quieres que haga el agente.");
 
   const research = task ? task.research : true;
-  const response = await completeWithTools({
-    system: SYSTEM_PROMPT,
-    prompt: `AUDIT DATA (JSON):\n${compactContext(report)}\n\nTASK:\n${instruction}`,
-    tools: research ? AGENTIC_TOOL_DEFINITIONS : [],
-    executeTools: executeAgenticTool,
-    maxTokens: 4096,
-    temperature: 0.4,
-    maxTurns: research ? 8 : 2,
-  });
+  const prompt = `AUDIT DATA (JSON):\n${compactContext(report)}\n\nTASK:\n${instruction}`;
+  // Sin investigación no se pasan herramientas: algunos proveedores rechazan una lista vacía.
+  const response = research
+    ? await completeWithTools({
+        system: SYSTEM_PROMPT,
+        prompt,
+        tools: AGENTIC_TOOL_DEFINITIONS,
+        executeTools: executeAgenticTool,
+        maxTokens: 4096,
+        temperature: 0.4,
+        maxTurns: 8,
+      })
+    : { text: await complete({ system: SYSTEM_PROMPT, prompt, maxTokens: 4096, temperature: 0.4 }), toolCalls: [] };
 
   const text = response.text?.trim();
   if (!text) throw new Error("El agente no devolvió contenido. Intenta de nuevo.");
