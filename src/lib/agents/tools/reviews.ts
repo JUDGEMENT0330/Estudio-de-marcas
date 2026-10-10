@@ -42,7 +42,7 @@ export async function fetchGoogleReviews(
     return unavailable(
       "google_reviews",
       "missing_api_key",
-      "Set GOOGLE_PLACES_API_KEY to collect real Google reviews."
+      "Configura GOOGLE_PLACES_API_KEY para obtener reseñas reales de Google."
     );
   }
 
@@ -50,7 +50,7 @@ export async function fetchGoogleReviews(
     return unavailable(
       "google_reviews",
       "not_applicable",
-      "Google reviews require a real Google place_id from the Business Profile lookup."
+      "Las reseñas de Google requieren el place_id real obtenido del perfil del negocio."
     );
   }
 
@@ -113,7 +113,7 @@ export async function fetchGoogleReviews(
     return unavailable(
       "google_reviews",
       "failed",
-      `Failed to fetch Google reviews: ${err.message}`
+      `No se pudieron obtener las reseñas de Google: ${err.message}`
     );
   }
 }
@@ -131,7 +131,7 @@ export async function fetchYelpReviews(
     return unavailable(
       "yelp_reviews",
       "missing_api_key",
-      "Set YELP_API_KEY to collect real Yelp review data."
+      "Configura YELP_API_KEY para obtener reseñas reales de Yelp."
     );
   }
 
@@ -154,7 +154,7 @@ export async function fetchYelpReviews(
     const business = searchData.businesses?.[0];
 
     if (!business) {
-      return unavailable("yelp_reviews", "not_found", "Business not found on Yelp.");
+      return unavailable("yelp_reviews", "not_found", "El negocio no se encontró en Yelp.");
     }
 
     // Fetch reviews
@@ -185,7 +185,7 @@ export async function fetchYelpReviews(
     return unavailable(
       "yelp_reviews",
       "failed",
-      `Failed to fetch Yelp data: ${err.message}`
+      `No se pudieron obtener datos de Yelp: ${err.message}`
     );
   }
 }
@@ -254,24 +254,24 @@ export function analyzeReviews(
   const recommendations: string[] = [];
 
   if (avgRating < 4.0) {
-    findings.push(`Average rating of ${avgRating.toFixed(1)} is below the 4.0 threshold for local search ranking boost`);
-    recommendations.push("Focus on improving service quality to increase average rating above 4.0");
+    findings.push(`La calificación promedio de ${avgRating.toFixed(1)} está por debajo del umbral de 4.0 que favorece el posicionamiento local`);
+    recommendations.push("Enfocarse en mejorar la calidad del servicio para llevar la calificación promedio por encima de 4.0");
   }
   if (ownerResponseRate < 50) {
-    findings.push(`Only ${ownerResponseRate}% of reviews have owner responses`);
-    recommendations.push("Respond to all reviews — especially negative ones — within 24 hours");
+    findings.push(`Solo el ${ownerResponseRate}% de las reseñas tiene respuesta del propietario`);
+    recommendations.push("Responder todas las reseñas —sobre todo las negativas— en menos de 24 horas");
   }
   if (negative > positive * 0.3) {
-    findings.push(`${Math.round((negative / total) * 100)}% of reviews are negative (2 stars or below)`);
-    recommendations.push("Investigate recurring complaint themes and address root causes");
+    findings.push(`El ${Math.round((negative / total) * 100)}% de las reseñas son negativas (2 estrellas o menos)`);
+    recommendations.push("Investigar las quejas recurrentes y atender sus causas de fondo");
   }
   if (reviewVelocity < 2) {
-    findings.push(`Low review velocity: approximately ${reviewVelocity} reviews per month`);
-    recommendations.push("Implement a review request workflow (post-service email/text with direct review link)");
+    findings.push(`Ritmo bajo de reseñas: aproximadamente ${reviewVelocity} por mes`);
+    recommendations.push("Implementar un flujo de solicitud de reseñas (correo o mensaje posterior al servicio con enlace directo)");
   }
   if (trend === "declining") {
-    findings.push("Review sentiment trend is declining — newer reviews are less positive than older ones");
-    recommendations.push("Investigate recent service quality changes; consider customer satisfaction survey");
+    findings.push("El sentimiento de las reseñas va en descenso: las recientes son menos positivas que las anteriores");
+    recommendations.push("Investigar cambios recientes en la calidad del servicio; considerar una encuesta de satisfacción");
   }
 
   return {

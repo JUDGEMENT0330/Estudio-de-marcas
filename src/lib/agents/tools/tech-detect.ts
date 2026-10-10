@@ -86,7 +86,7 @@ export async function detectTechStack(
     try {
       const response = await fetch(params.url, {
         headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; PhantomReachBot/1.0)",
+          "User-Agent": "Mozilla/5.0 (compatible; EstudioDeMarcasBot/1.0; +https://cybervaltorix.com)",
         },
         signal: AbortSignal.timeout(15000),
         redirect: "follow",
@@ -96,7 +96,7 @@ export async function detectTechStack(
         return unavailable(
           "tech_detect",
           "failed",
-          `Website HTML fetch returned ${response.status} for ${params.url}.`
+          `La descarga del HTML del sitio devolvió ${response.status} para ${params.url}.`
         );
       }
 
@@ -105,7 +105,7 @@ export async function detectTechStack(
       return unavailable(
         "tech_detect",
         "failed",
-        `Website HTML fetch failed for ${params.url}: ${err.message}`
+        `No se pudo descargar el HTML de ${params.url}: ${err.message}`
       );
     }
   }
@@ -150,24 +150,24 @@ export async function detectTechStack(
   findings.push(`CMS: ${cms}`);
 
   if (detected.analytics?.length) {
-    findings.push(`Analytics: ${detected.analytics.join(", ")}`);
+    findings.push(`Analítica: ${detected.analytics.join(", ")}`);
   } else {
-    findings.push("No web analytics detected");
-    recommendations.push("Install Google Analytics 4 to understand visitor and conversion behavior");
+    findings.push("No se detectó analítica web");
+    recommendations.push("Instalar Google Analytics 4 para entender el comportamiento de visitantes y conversiones");
   }
 
   if (detected.marketing?.length) {
-    findings.push(`Marketing tools: ${detected.marketing.join(", ")}`);
+    findings.push(`Herramientas de marketing: ${detected.marketing.join(", ")}`);
   } else {
-    recommendations.push("Add an email capture path for repeat customers and seasonal announcements");
+    recommendations.push("Agregar captura de correos para clientes recurrentes y anuncios de temporada");
   }
 
   if (!detected.chat?.length) {
-    recommendations.push("Add a clear question/contact path for visitors who need help before converting");
+    recommendations.push("Agregar una vía clara de consulta o contacto para quienes necesitan ayuda antes de comprar");
   }
 
   if (maturityScore < 40) {
-    findings.push(`Digital maturity score of ${maturityScore}/100 indicates several measurement or conversion tools are missing`);
+    findings.push(`Madurez digital de ${maturityScore}/100: faltan varias herramientas de medición o conversión`);
   }
 
   const analysis: TechStackResult = {

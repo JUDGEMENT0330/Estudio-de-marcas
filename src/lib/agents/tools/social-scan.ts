@@ -41,21 +41,21 @@ export async function scanSocialProfiles(
   const findings: string[] = [];
 
   if (socialLinks.length > 0) {
-    findings.push(`Found ${socialLinks.length} social media link(s) on the business website`);
+    findings.push(`Se encontraron ${socialLinks.length} enlace(s) a redes sociales en el sitio web`);
     for (const link of socialLinks) {
       findings.push(`${link.platform}: ${link.url}`);
     }
   } else if (params.website) {
-    findings.push("No social media links found on the business website; profiles may exist but are not linked");
+    findings.push("No hay enlaces a redes sociales en el sitio web; los perfiles podrían existir sin estar enlazados");
   } else {
-    findings.push("No website provided, so social links could not be checked from the website");
+    findings.push("No se indicó sitio web, por lo que no se pudieron revisar enlaces sociales desde él");
   }
 
   if (platforms_found > 0) {
-    findings.push(`Linked profile presence found on ${platforms_found} platform(s)`);
+    findings.push(`Presencia enlazada en ${platforms_found} plataforma(s)`);
   }
 
-  findings.push("Profile activity, follower count, and post recency were not verified from the website link scan");
+  findings.push("La actividad, seguidores y publicaciones recientes no se verificaron en el escaneo de enlaces");
 
   const recommendations: string[] = [
     "Ensure active social profiles are linked from the business website",
@@ -63,7 +63,7 @@ export async function scanSocialProfiles(
   ];
 
   if (platforms_found === 0) {
-    recommendations.push("Check major social profiles and link the active ones from the website");
+    recommendations.push("Revisar los perfiles sociales principales y enlazar los activos desde el sitio web");
   }
 
   return {
@@ -89,7 +89,7 @@ async function extractSocialLinksFromWebsite(websiteUrl: string): Promise<Social
     const res = await fetch(websiteUrl, {
       signal: AbortSignal.timeout(10000),
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; PhantomReach/2.0; +https://phantomreach.com/bot)",
+        "User-Agent": "Mozilla/5.0 (compatible; EstudioDeMarcasBot/1.0; +https://cybervaltorix.com)",
         Accept: "text/html",
       },
     });

@@ -264,7 +264,7 @@ export async function searchCompetitors(
     return unavailable(
       "competitors",
       "missing_api_key",
-      "Set GOOGLE_PLACES_API_KEY to collect competitors from Google Places."
+      "Configura GOOGLE_PLACES_API_KEY para obtener competidores desde Google Places."
     );
   }
 
@@ -292,7 +292,7 @@ export async function searchCompetitors(
     return unavailable(
       "competitors",
       "not_found",
-      `No real competitors were found for "${businessName}" from Google Places.`
+      `No se encontraron competidores reales de "${businessName}" en Google Places.`
     );
   }
 
@@ -349,17 +349,17 @@ export async function searchCompetitors(
 
   const leaderCount = tRating > 0 ? competitors.filter((c) => (c.rating || 0) > tRating).length : 0;
   if (tRating > 0) {
-    findings.push(`You rank ${leaderCount + 1} of ${competitors.length + 1} competitors by rating`);
+    findings.push(`Ocupa el puesto ${leaderCount + 1} de ${competitors.length + 1} competidores por calificación`);
     const topRating = Math.max(...competitors.map((c) => c.rating || 0));
     if (topRating > tRating) {
-      findings.push(`Your ${tRating} rating trails the category leader's ${topRating.toFixed(1)}`);
+      findings.push(`Su calificación de ${tRating} está por debajo del líder de la categoría (${topRating.toFixed(1)})`);
     }
   }
-  findings.push(`${competitors.length} direct competitors identified in your ${category || "category"}`);
+  findings.push(`${competitors.length} competidores directos identificados en ${category || "su categoría"}`);
 
-  recommendations.push("Focus on review generation via post-visit follow-up");
-  recommendations.push("Address negative review themes to improve sentiment and demonstrate responsiveness");
-  recommendations.push("Complete all GBP fields to match leader benchmark");
+  recommendations.push("Impulsar la generación de reseñas con seguimiento posterior a la visita");
+  recommendations.push("Atender los temas de reseñas negativas para mejorar el sentimiento y mostrar capacidad de respuesta");
+  recommendations.push("Completar todos los campos del perfil de Google para igualar al líder");
 
   let score = 70;
   if (targetPosition === "leader") score = 85;

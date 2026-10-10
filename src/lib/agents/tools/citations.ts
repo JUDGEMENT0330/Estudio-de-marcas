@@ -24,6 +24,6 @@ export async function checkCitations(
   return unavailable(
     "citations",
     "not_applicable",
-    "Citation consistency requires a real citation provider; no local collector is implemented yet."
+    "La consistencia en directorios requiere un proveedor de citas real; aún no hay un recolector disponible."
   );
 }

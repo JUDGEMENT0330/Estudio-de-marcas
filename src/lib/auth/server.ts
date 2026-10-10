@@ -4,7 +4,7 @@ import type { User } from "@/lib/db/types";
 import { getLocalWorkspaceUser } from "./local-workspace";
 
 export function getAuthErrorMessage(): string {
-  return "Phantom Reach is running in local workspace mode. Authentication is not required.";
+  return "Estudio de Marcas se ejecuta en modo espacio de trabajo. No requiere autenticación.";
 }
 
 export async function getCurrentUser(): Promise<User> {

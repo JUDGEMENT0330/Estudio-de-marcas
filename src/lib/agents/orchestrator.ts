@@ -397,7 +397,7 @@ export async function runAuditPipeline(
     evidence.push(
       failedEvidence(
         "gbp_health",
-        "Google Business Profile lookup failed unexpectedly."
+        "La búsqueda del perfil de Google Business falló inesperadamente."
       )
     );
     // GBP lookup failed — continue
@@ -481,7 +481,7 @@ export async function runAuditPipeline(
           evidence.push(
             skippedEvidence(
               "review_sentiment",
-              "Reviews were skipped because no usable review source was available."
+              "Se omitieron las reseñas porque no había una fuente de reseñas utilizable."
             )
           );
         }
@@ -507,7 +507,7 @@ export async function runAuditPipeline(
       evidence.push(
         failedEvidence(
           "review_sentiment",
-          "Reviews and reputation analysis failed unexpectedly."
+          "El análisis de reseñas y reputación falló inesperadamente."
         )
       );
       return undefined;
@@ -520,7 +520,7 @@ export async function runAuditPipeline(
       evidence.push(
         skippedEvidence(
           "website_performance",
-          "Website performance was skipped because no website URL was found."
+          "Se omitió el rendimiento web porque no se encontró la URL del sitio."
         )
       );
       return undefined;
@@ -543,7 +543,7 @@ export async function runAuditPipeline(
       evidence.push(
         failedEvidence(
           "website_performance",
-          "Website performance analysis failed unexpectedly."
+          "El análisis de rendimiento web falló inesperadamente."
         )
       );
       return undefined;
@@ -556,7 +556,7 @@ export async function runAuditPipeline(
       evidence.push(
         skippedEvidence(
           "tech_stack",
-          "Technology stack analysis was skipped because no website URL was found."
+          "Se omitió el análisis de tecnología porque no se encontró la URL del sitio."
         )
       );
       return undefined;
@@ -579,7 +579,7 @@ export async function runAuditPipeline(
       evidence.push(
         failedEvidence(
           "tech_stack",
-          "Technology stack analysis failed unexpectedly."
+          "El análisis de tecnología falló inesperadamente."
         )
       );
       return undefined;
@@ -601,7 +601,7 @@ export async function runAuditPipeline(
       evidence.push(
         failedEvidence(
           "social_presence",
-          "Social presence analysis failed unexpectedly."
+          "El análisis de presencia social falló inesperadamente."
         )
       );
       return undefined;
@@ -634,7 +634,7 @@ export async function runAuditPipeline(
       evidence.push(
         failedEvidence(
           "citation_consistency",
-          "Citation consistency analysis failed unexpectedly."
+          "El análisis de directorios falló inesperadamente."
         )
       );
       return undefined;
@@ -668,7 +668,7 @@ export async function runAuditPipeline(
       evidence.push(
         failedEvidence(
           "competitive_comparison",
-          "Competitive comparison failed unexpectedly."
+          "La comparación competitiva falló inesperadamente."
         )
       );
       return undefined;
@@ -828,7 +828,7 @@ Return your findings as a structured summary. Be honest about what you found vs.
     evidence.push(collectedEvidence("revenue_impact"));
   } else {
     evidence.push(
-      failedEvidence("revenue_impact", "Revenue impact calculation failed unexpectedly.")
+      failedEvidence("revenue_impact", "El cálculo de impacto en ingresos falló inesperadamente.")
     );
   }
 
@@ -839,7 +839,7 @@ Return your findings as a structured summary. Be honest about what you found vs.
     evidence.push(
       failedEvidence(
         "business_intelligence",
-        "Business intelligence collection failed unexpectedly."
+        "La recopilación de inteligencia comercial falló inesperadamente."
       )
     );
   }
@@ -850,13 +850,13 @@ Return your findings as a structured summary. Be honest about what you found vs.
     evidence.push(
       enrichmentCount > 0
         ? collectedEvidence("business_enrichment", "Collected public business facts and cited research.")
-        : evidenceModule("business_enrichment", "unavailable", "No reliable public enrichment facts were found.")
+        : evidenceModule("business_enrichment", "unavailable", "No se encontraron datos públicos confiables para el contexto.")
     );
   } else {
     evidence.push(
       failedEvidence(
         "business_enrichment",
-        "Business context enrichment failed unexpectedly."
+        "El enriquecimiento del contexto del negocio falló inesperadamente."
       )
     );
   }

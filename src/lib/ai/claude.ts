@@ -1,5 +1,5 @@
 /**
- * LLM Provider Router for Phantom Reach.
+ * LLM Provider Router (Estudio de Marcas · Cyber Valtorix).
  *
  * Routes AI calls to the active provider (Anthropic, OpenAI, or Google).
  * Defaults to Anthropic. Configurable via LLM_PROVIDER env var.
@@ -19,6 +19,34 @@ import type { LLMProvider, AgenticRequest, AgenticResponse } from "./types";
 import { anthropicProvider, resetAnthropicClient } from "./providers/anthropic";
 import { openaiProvider, resetOpenAIClient, isUsingCodex } from "./providers/openai";
 import { googleProvider, resetGoogleClient } from "./providers/google";
+
+// ---------------------------------------------------------------------------
+// Idioma de salida
+// ---------------------------------------------------------------------------
+
+/**
+ * Directiva de idioma que se añade a todos los prompts de sistema. Los prompts
+ * internos están en inglés (más precisos para el razonamiento), pero todo el
+ * texto que verá el cliente debe redactarse en español neutro.
+ * REPORT_LANGUAGE permite cambiarlo (p. ej. "en" para inglés).
+ */
+export function outputLanguageDirective(): string {
+  const lang = (process.env.REPORT_LANGUAGE || "es").trim().toLowerCase();
+  if (lang.startsWith("en")) return "";
+  return [
+    "",
+    "## OUTPUT LANGUAGE — MANDATORY",
+    "Write EVERY human-readable string value (headlines, findings, recommendations, summaries, labels, narratives, rationales, grade labels) in professional, neutral Latin American Spanish (es-419), as a senior strategy consultant from Cyber Valtorix would write for a client in El Salvador.",
+    "Keep JSON keys, enum values (e.g. \"high\", \"medium\", \"low\", \"leader\", \"critical\", \"positive\"), module keys, URLs, brand names and proper nouns exactly as specified in English. Do not translate field names.",
+    "Use US dollars ($) for currency. Use clear, direct Spanish without anglicisms when a Spanish term exists.",
+  ].join("\n");
+}
+
+function withLanguage(system: string | undefined): string | undefined {
+  const directive = outputLanguageDirective();
+  if (!directive) return system;
+  return `${system ?? ""}${directive}`;
+}
 
 // ---------------------------------------------------------------------------
 // Backward-compat exports (KEEP — orchestrator imports these)
@@ -155,7 +183,7 @@ export async function complete(options: CompletionOptions): Promise<string | nul
   if (!provider.isConfigured()) return null;
 
   const { system, prompt, maxTokens, temperature } = options;
-  const response = await provider.complete({ system, prompt, maxTokens, temperature });
+  const response = await provider.complete({ system: withLanguage(system), prompt, maxTokens, temperature });
   return response.text;
 }
 
@@ -170,7 +198,7 @@ export async function extractJSON<T = unknown>(
   if (!provider.isConfigured()) return null;
 
   const { system, prompt, maxTokens, temperature } = options;
-  return provider.extractJSON<T>({ system, prompt, maxTokens, temperature });
+  return provider.extractJSON<T>({ system: withLanguage(system), prompt, maxTokens, temperature });
 }
 
 /**
@@ -186,13 +214,13 @@ export async function completeWithTools(req: AgenticRequest): Promise<AgenticRes
 
   // Use the typed interface — all providers now implement completeWithTools
   if (provider.completeWithTools) {
-    return provider.completeWithTools(req);
+    return provider.completeWithTools({ ...req, system: withLanguage(req.system) });
   }
 
   // Fallback: single completion without tools
   console.warn("[ai/claude] Provider does not support tool use — falling back to single completion");
   const response = await provider.complete({
-    system: req.system,
+    system: withLanguage(req.system),
     prompt: req.prompt,
     maxTokens: req.maxTokens,
     temperature: req.temperature,

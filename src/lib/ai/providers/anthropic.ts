@@ -26,7 +26,7 @@ import type {
 // Model constant — single frontier model
 // ---------------------------------------------------------------------------
 
-const MODEL = "claude-sonnet-4-6";
+const MODEL = process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-4-6";
 
 // ---------------------------------------------------------------------------
 // Singleton client

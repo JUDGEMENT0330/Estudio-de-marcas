@@ -18,6 +18,6 @@ describe("data source setup help", () => {
       docsUrl: "https://api.opencorporates.com/documentation/API-Reference",
       envVar: "OPENCORPORATES_API_TOKEN",
     });
-    expect(openCorporates?.setup?.steps.join(" ")).toContain("API Account");
+    expect(openCorporates?.setup?.steps.join(" ")).toContain("OpenCorporates API");
   });
 });

@@ -28,7 +28,7 @@ export async function runPageSpeedAudit(
     return unavailable(
       "pagespeed",
       "missing_api_key",
-      "Set GOOGLE_PAGESPEED_API_KEY to collect real PageSpeed Insights data."
+      "Configura GOOGLE_PAGESPEED_API_KEY para obtener datos reales de PageSpeed Insights."
     );
   }
 
@@ -47,7 +47,7 @@ export async function runPageSpeedAudit(
 
     if (!response.ok) {
       if (response.status === 429) {
-        return unavailable("pagespeed", "blocked", "PageSpeed Insights rate limit was reached.");
+        return unavailable("pagespeed", "blocked", "Se alcanzó el límite de solicitudes de PageSpeed Insights.");
       }
       throw new Error(`PageSpeed API error: ${response.status} ${response.statusText}`);
     }
@@ -94,35 +94,35 @@ export async function runPageSpeedAudit(
     const recommendations: string[] = [];
 
     if (performanceScore < 50) {
-      findings.push(`Performance score of ${performanceScore}/100 is critically low`);
-      recommendations.push("Address performance issues urgently; slow sites lose mobile visitors");
+      findings.push(`Rendimiento de ${performanceScore}/100: críticamente bajo`);
+      recommendations.push("Atender con urgencia los problemas de rendimiento: los sitios lentos pierden visitantes móviles");
     } else if (performanceScore < 90) {
-      findings.push(`Performance score of ${performanceScore}/100 has room for improvement`);
+      findings.push(`Rendimiento de ${performanceScore}/100: con margen de mejora`);
     }
 
     if (!lcpPass && lcp) {
-      findings.push(`Largest Contentful Paint (${(lcp / 1000).toFixed(1)}s) exceeds 2.5s threshold`);
-      recommendations.push("Optimize the largest content element, compress images, and defer non-critical resources");
+      findings.push(`Largest Contentful Paint (${(lcp / 1000).toFixed(1)} s) supera el umbral de 2.5 s`);
+      recommendations.push("Optimizar el elemento de contenido más grande, comprimir imágenes y diferir recursos no críticos");
     }
     if (!clsPass && cls) {
-      findings.push(`Cumulative Layout Shift (${cls.toFixed(3)}) exceeds 0.1 threshold`);
-      recommendations.push("Set explicit width and height on images and ads to prevent layout shift");
+      findings.push(`Cumulative Layout Shift (${cls.toFixed(3)}) supera el umbral de 0.1`);
+      recommendations.push("Definir ancho y alto explícitos en imágenes y anuncios para evitar saltos de diseño");
     }
     if (!sslValid) {
-      findings.push("Website is not served over HTTPS");
-      recommendations.push("Install an SSL certificate immediately");
+      findings.push("El sitio web no se sirve por HTTPS");
+      recommendations.push("Instalar un certificado SSL de inmediato");
     }
     if (pageWeightMb && pageWeightMb > 3) {
-      findings.push(`Page weight of ${pageWeightMb}MB is excessive (target: under 2MB)`);
-      recommendations.push("Compress images, enable text compression, and remove unused code");
+      findings.push(`Peso de página de ${pageWeightMb} MB es excesivo (meta: menos de 2 MB)`);
+      recommendations.push("Comprimir imágenes, activar compresión de texto y eliminar código sin uso");
     }
     if (accessibilityScore < 70) {
-      findings.push(`Accessibility score of ${accessibilityScore}/100 needs attention`);
-      recommendations.push("Improve accessibility with alt text, heading hierarchy, and color contrast");
+      findings.push(`Accesibilidad de ${accessibilityScore}/100: requiere atención`);
+      recommendations.push("Mejorar la accesibilidad con texto alternativo, jerarquía de encabezados y contraste de color");
     }
     if (seoScore < 80) {
-      findings.push(`SEO score of ${seoScore}/100 is below best practices`);
-      recommendations.push("Add meta descriptions, clean heading structure, and structured data");
+      findings.push(`SEO de ${seoScore}/100: por debajo de las buenas prácticas`);
+      recommendations.push("Agregar meta descripciones, una estructura de encabezados limpia y datos estructurados");
     }
 
     const analysis: WebsitePerformanceResult = {
@@ -162,8 +162,8 @@ export async function runPageSpeedAudit(
     return { analysis, rawLighthouse };
   } catch (err: any) {
     if (err.name === "TimeoutError" || err.message?.includes("timeout")) {
-      return unavailable("pagespeed", "failed", "PageSpeed Insights request timed out.");
+      return unavailable("pagespeed", "failed", "La solicitud a PageSpeed Insights excedió el tiempo de espera.");
     }
-    return unavailable("pagespeed", "failed", `PageSpeed audit failed: ${err.message}`);
+    return unavailable("pagespeed", "failed", `La auditoría de PageSpeed falló: ${err.message}`);
   }
 }

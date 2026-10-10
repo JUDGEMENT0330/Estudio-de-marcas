@@ -284,7 +284,7 @@ function calculateReviewResponseGapCost(
 
   return {
     category: "Review Engagement Gap",
-    description: "A low owner response rate can weaken trust at the moment customers compare ratings, recent reviews, and business responsiveness",
+    description: "Una baja tasa de respuesta del propietario debilita la confianza cuando los clientes comparan calificaciones, reseñas recientes y capacidad de respuesta",
     low_estimate: lowEstimate,
     mid_estimate: midEstimate,
     high_estimate: highEstimate,
@@ -327,7 +327,7 @@ function calculateCitationInconsistencyCost(
 
   return {
     category: "Citation Inconsistency Cost",
-    description: "Verified name, address, or phone mismatches can weaken local search confidence and reduce organic discovery",
+    description: "Las inconsistencias verificadas de nombre, dirección o teléfono debilitan la confianza en la búsqueda local y reducen el descubrimiento orgánico",
     low_estimate: Math.round(lostConversions * ticketValue.low),
     mid_estimate: Math.round(lostConversions * ticketValue.mid),
     high_estimate: Math.round(lostConversions * ticketValue.high),
@@ -374,7 +374,7 @@ function calculateSocialDormancyCost(
 
   return {
     category: "Social Discovery Gap",
-    description: "Missing or dormant social profiles can reduce referral traffic and weaken brand discovery",
+    description: "Perfiles sociales ausentes o inactivos reducen el tráfico referido y debilitan el descubrimiento de la marca",
     low_estimate: Math.round(lostConversions * ticketValue.low),
     mid_estimate: Math.round(lostConversions * ticketValue.mid),
     high_estimate: Math.round(lostConversions * ticketValue.high),
@@ -450,35 +450,35 @@ export async function estimateRevenueImpact(params: RevenueImpactParams): Promis
 
   const findings: string[] = [];
   if (totalMonthlyMid > 0) {
-    findings.push(`Directional revenue at risk: $${totalMonthlyMid.toLocaleString()}/month from evidence-backed digital friction`);
+    findings.push(`Ingresos en riesgo (orientativo): $${totalMonthlyMid.toLocaleString()}/mes por fricción digital respaldada en evidencia`);
     const topLeak = [...leaks].sort((a, b) => b.mid_estimate - a.mid_estimate)[0];
     if (topLeak) {
-      findings.push(`Largest quantified opportunity: ${topLeak.category} at about $${topLeak.mid_estimate.toLocaleString()}/month`);
+      findings.push(`Mayor oportunidad cuantificada: ${topLeak.category}, cerca de $${topLeak.mid_estimate.toLocaleString()}/mes`);
     }
   } else {
-    findings.push("No evidence-backed revenue leakage could be quantified from the collected modules");
+    findings.push("No se pudo cuantificar fuga de ingresos respaldada en evidencia con los módulos recopilados");
   }
 
   if (monthlyRevenue && totalMonthlyMid > 0) {
     const pct = ((totalMonthlyMid / monthlyRevenue) * 100).toFixed(1);
-    findings.push(`The estimate equals about ${pct}% of the monthly revenue baseline, so treat it as a directional planning range`);
+    findings.push(`La estimación equivale a cerca del ${pct}% de los ingresos mensuales de referencia; tómela como un rango orientativo de planificación`);
   }
 
   const recommendations: string[] = [];
   if (leaks.some((leak) => leak.category === "Mobile Conversion Friction")) {
-    recommendations.push("Prioritize mobile speed, layout stability, and above-the-fold visit details");
+    recommendations.push("Priorizar velocidad móvil, estabilidad del diseño y datos de visita visibles sin desplazarse");
   }
   if (leaks.some((leak) => leak.category === "Review Engagement Gap")) {
-    recommendations.push("Start responding to recent Google reviews with short, human owner replies");
+    recommendations.push("Empezar a responder las reseñas recientes de Google con respuestas breves y humanas del propietario");
   }
   if (leaks.some((leak) => leak.category === "Citation Inconsistency Cost")) {
-    recommendations.push("Clean only the directory listings where mismatches were verified");
+    recommendations.push("Corregir solo los directorios donde se verificaron inconsistencias");
   }
   if (leaks.some((leak) => leak.category === "After-Hours Lead Leakage")) {
-    recommendations.push("Add after-hours form, booking, or callback capture where customers expect it");
+    recommendations.push("Agregar formulario, reservas o solicitud de llamada fuera de horario donde los clientes lo esperan");
   }
   if (fixPotential > 0) {
-    recommendations.push(`Estimated annual recovery potential from evidence-backed gaps: $${Math.round(fixPotential).toLocaleString()}`);
+    recommendations.push(`Potencial anual de recuperación estimado por brechas respaldadas en evidencia: $${Math.round(fixPotential).toLocaleString()}`);
   }
 
   const roiMessage = totalMonthlyMid > 0

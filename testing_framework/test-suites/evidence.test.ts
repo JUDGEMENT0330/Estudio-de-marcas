@@ -40,7 +40,7 @@ describe("audit evidence builder", () => {
       expect.arrayContaining([
         expect.objectContaining({
           key: "gbp_health",
-          label: "Google Business Profile",
+          label: "Perfil de Google Business",
           status: "collected",
         }),
         expect.objectContaining({

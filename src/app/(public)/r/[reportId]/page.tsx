@@ -1,4 +1,6 @@
 import { Metadata } from "next";
+import { BRAND } from "@/lib/brand";
+import { localizeGrade, translateEnum } from "@/lib/reports/display-labels";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,11 +29,11 @@ import type {
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 function formatCurrency(n: number): string {
-  return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  return "$" + n.toLocaleString("es-SV", { maximumFractionDigits: 0 });
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
+  return new Date(iso).toLocaleDateString("es-SV", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -64,15 +66,15 @@ export async function generateMetadata({
   const report = await fetchReport(reportId);
 
   if (!report) {
-    return { title: "Report Not Found | Phantom Reach" };
+    return { title: `Reporte no encontrado | ${BRAND.appName}` };
   }
 
   if (report.type === "audit") {
     const input = report.input as AuditInput;
     const grade = report.scores?.overall_grade ?? "";
     const score = report.scores?.overall_score ?? 0;
-    const title = `${input.businessName} Digital Audit${grade ? ` — Grade ${grade}` : ""} | Phantom Reach`;
-    const description = `Digital health audit for ${input.businessName}${input.city ? ` in ${input.city}` : ""}. Overall score: ${score}/100.`;
+    const title = `Auditoría digital de ${input.businessName}${grade ? ` — ${localizeGrade(grade)}` : ""} | ${BRAND.companyShort}`;
+    const description = `Auditoría de salud digital de ${input.businessName}${input.city ? ` en ${input.city}` : ""}. Calificación general: ${score}/100.`;
     return {
       title,
       description,
@@ -80,7 +82,7 @@ export async function generateMetadata({
         title,
         description,
         type: "article",
-        siteName: "Phantom Reach",
+        siteName: BRAND.appName,
       },
       twitter: {
         card: "summary_large_image",
@@ -92,12 +94,12 @@ export async function generateMetadata({
 
   // Scout report
   const input = report.input as ScoutInput;
-  const title = `${input.category} Market Scout — ${input.city} | Phantom Reach`;
-  const description = `Market intelligence report for ${input.category} businesses in ${input.city}.`;
+  const title = `Exploración de mercado: ${input.category} — ${input.city} | ${BRAND.companyShort}`;
+  const description = `Reporte de inteligencia de mercado para negocios de ${input.category} en ${input.city}.`;
   return {
     title,
     description,
-    openGraph: { title, description, type: "article", siteName: "Phantom Reach" },
+    openGraph: { title, description, type: "article", siteName: BRAND.appName },
     twitter: { card: "summary_large_image", title, description },
   };
 }
@@ -119,16 +121,15 @@ export default async function PublicReportPage({
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <AlertCircle className="h-12 w-12 text-muted-foreground" />
-        <h1 className="mt-4 text-2xl font-bold">Report Not Found</h1>
+        <h1 className="mt-4 text-2xl font-bold">Reporte no encontrado</h1>
         <p className="mt-2 text-muted-foreground max-w-md">
-          This report may have expired or the link may be invalid.
-          Reports are available for 90 days after generation.
+          Es posible que el reporte haya expirado o que el enlace no sea válido.
         </p>
         <a
           href={APP_URL}
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         >
-          Get Your Free Audit <ExternalLink className="h-4 w-4" />
+          Ir a Estudio de Marcas <ExternalLink className="h-4 w-4" />
         </a>
       </div>
     );
@@ -139,15 +140,15 @@ export default async function PublicReportPage({
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <AlertCircle className="h-12 w-12 text-muted-foreground" />
-        <h1 className="mt-4 text-2xl font-bold">Report Expired</h1>
+        <h1 className="mt-4 text-2xl font-bold">Reporte expirado</h1>
         <p className="mt-2 text-muted-foreground max-w-md">
-          This report has expired. Run a new audit to get up-to-date results.
+          Este reporte expiró. Ejecuta una nueva auditoría para obtener resultados actualizados.
         </p>
         <a
           href={APP_URL}
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         >
-          Run a New Audit <ExternalLink className="h-4 w-4" />
+          Nueva auditoría <ExternalLink className="h-4 w-4" />
         </a>
       </div>
     );
@@ -161,10 +162,10 @@ export default async function PublicReportPage({
         <meta httpEquiv="refresh" content="5" />
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <h1 className="mt-6 text-2xl font-bold">Report In Progress</h1>
+          <h1 className="mt-6 text-2xl font-bold">Reporte en proceso</h1>
           <p className="mt-2 text-muted-foreground max-w-md">
-            We are analyzing the business data. This usually takes 30 to 90 seconds.
-            This page will automatically refresh.
+            Estamos analizando los datos del negocio. Suele tardar unos minutos.
+            Esta página se actualizará automáticamente.
           </p>
         </div>
       </>
@@ -176,14 +177,14 @@ export default async function PublicReportPage({
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <XCircle className="h-12 w-12 text-destructive" />
-        <h1 className="mt-4 text-2xl font-bold">Report Generation Failed</h1>
+        <h1 className="mt-4 text-2xl font-bold">No se pudo generar el reporte</h1>
         <p className="mt-2 text-muted-foreground max-w-md">
-          Something went wrong while generating this report.
-          Please try running a new audit.
+          Algo salió mal al generar este reporte.
+          Intenta ejecutar una nueva auditoría.
         </p>
         <a
           href={APP_URL}
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           Try Again <ExternalLink className="h-4 w-4" />
         </a>
@@ -212,9 +213,9 @@ function AuditReportView({ report }: { report: Report }) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <AlertCircle className="h-12 w-12 text-muted-foreground" />
-        <h1 className="mt-4 text-2xl font-bold">No Data Available</h1>
+        <h1 className="mt-4 text-2xl font-bold">Sin datos disponibles</h1>
         <p className="mt-2 text-muted-foreground">
-          This report does not contain any result data yet.
+          Este reporte aún no contiene resultados.
         </p>
       </div>
     );
@@ -225,7 +226,7 @@ function AuditReportView({ report }: { report: Report }) {
       {/* ---- Header ---- */}
       <header className="text-center space-y-4 pb-6 border-b border-border">
         <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
-          Digital Health Report
+          Reporte de salud digital
         </p>
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
           {input.businessName}
@@ -250,7 +251,7 @@ function AuditReportView({ report }: { report: Report }) {
             <div className="flex items-start gap-3">
               <BarChart3 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div>
-                <h2 className="font-semibold text-lg mb-2">Executive Summary</h2>
+                <h2 className="font-semibold text-lg mb-2">Resumen ejecutivo</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {typeof result.executive_summary === "string"
                     ? result.executive_summary
@@ -267,11 +268,11 @@ function AuditReportView({ report }: { report: Report }) {
 
       {/* ---- Module Sections ---- */}
       <section className="space-y-6">
-        <h2 className="text-xl font-bold tracking-tight">Detailed Analysis</h2>
+        <h2 className="text-xl font-bold tracking-tight">Análisis detallado</h2>
 
         {result.gbp_health && (
           <ModuleCard
-            title="Google Business Profile Health"
+            title="Salud del perfil de Google Business"
             icon={<MapPin className="h-5 w-5" />}
             grade={result.gbp_health.grade}
             score={result.gbp_health.score}
@@ -279,17 +280,17 @@ function AuditReportView({ report }: { report: Report }) {
             recommendations={result.gbp_health.recommendations}
           >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <MetricCell label="Rating" value={result.gbp_health.rating ? `${result.gbp_health.rating} / 5.0` : "N/A"} />
-              <MetricCell label="Reviews" value={result.gbp_health.review_count ?? "N/A"} />
-              <MetricCell label="Photos" value={result.gbp_health.photos_count} />
-              <MetricCell label="Completeness" value={`${result.gbp_health.completeness_pct}%`} />
+              <MetricCell label="Calificación" value={result.gbp_health.rating ? `${result.gbp_health.rating} / 5.0` : "N/D"} />
+              <MetricCell label="Reseñas" value={result.gbp_health.review_count ?? "N/D"} />
+              <MetricCell label="Fotos" value={result.gbp_health.photos_count} />
+              <MetricCell label="Completitud" value={`${result.gbp_health.completeness_pct}%`} />
             </div>
           </ModuleCard>
         )}
 
         {result.review_sentiment && (
           <ModuleCard
-            title="Review Sentiment & Reputation"
+            title="Sentimiento de reseñas y reputación"
             icon={<Star className="h-5 w-5" />}
             grade={result.review_sentiment.grade}
             score={result.review_sentiment.score}
@@ -297,10 +298,10 @@ function AuditReportView({ report }: { report: Report }) {
             recommendations={result.review_sentiment.recommendations}
           >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <MetricCell label="Google Rating" value={result.review_sentiment.google_rating ?? "N/A"} />
-              <MetricCell label="Response Rate" value={`${result.review_sentiment.owner_response_rate ?? 0}%`} />
-              <MetricCell label="Trend" value={result.review_sentiment.trend_direction} className="capitalize" />
-              <MetricCell label="Velocity" value={`${result.review_sentiment.review_velocity ?? 0}/mo`} />
+              <MetricCell label="Calificación Google" value={result.review_sentiment.google_rating ?? "N/D"} />
+              <MetricCell label="Tasa de respuesta" value={`${result.review_sentiment.owner_response_rate ?? 0}%`} />
+              <MetricCell label="Tendencia" value={translateEnum(result.review_sentiment.trend_direction)} />
+              <MetricCell label="Ritmo" value={`${result.review_sentiment.review_velocity ?? 0}/mes`} />
             </div>
             <div className="mt-3">
               <div className="flex h-3 rounded-full overflow-hidden">
@@ -319,7 +320,7 @@ function AuditReportView({ report }: { report: Report }) {
 
         {result.website_performance && (
           <ModuleCard
-            title="Website Performance"
+            title="Rendimiento del sitio web"
             icon={<Globe className="h-5 w-5" />}
             grade={result.website_performance.grade}
             score={result.website_performance.score}
@@ -327,10 +328,10 @@ function AuditReportView({ report }: { report: Report }) {
             recommendations={result.website_performance.recommendations}
           >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <MetricCell label="Performance" value={`${result.website_performance.performance_score}/100`} />
+              <MetricCell label="Rendimiento" value={`${result.website_performance.performance_score}/100`} />
               <MetricCell label="SEO" value={`${result.website_performance.seo_score}/100`} />
-              <MetricCell label="Accessibility" value={`${result.website_performance.accessibility_score}/100`} />
-              <MetricCell label="SSL" value={result.website_performance.ssl_valid ? "Valid" : "Missing"} />
+              <MetricCell label="Accesibilidad" value={`${result.website_performance.accessibility_score}/100`} />
+              <MetricCell label="SSL" value={result.website_performance.ssl_valid ? "Válido" : "Ausente"} />
             </div>
             <div className="flex gap-4 mt-3">
               {result.website_performance.core_web_vitals.lcp !== undefined && (
@@ -363,7 +364,7 @@ function AuditReportView({ report }: { report: Report }) {
 
         {result.tech_stack && (
           <ModuleCard
-            title="Technology Stack & Digital Maturity"
+            title="Tecnología y madurez digital"
             icon={<Cpu className="h-5 w-5" />}
             grade={result.tech_stack.grade}
             score={result.tech_stack.score}
@@ -371,19 +372,19 @@ function AuditReportView({ report }: { report: Report }) {
             recommendations={result.tech_stack.recommendations}
           >
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-              <MetricCell label="CMS" value={result.tech_stack.cms || "Unknown"} />
-              <MetricCell label="Analytics" value={result.tech_stack.analytics.length > 0 ? result.tech_stack.analytics.join(", ") : "None"} />
-              <MetricCell label="Booking" value={result.tech_stack.booking_system || "None"} />
-              <MetricCell label="Chat" value={result.tech_stack.chat_widget || "None"} />
-              <MetricCell label="Payment" value={result.tech_stack.payment_processor || "None"} />
-              <MetricCell label="Maturity" value={`${result.tech_stack.digital_maturity_score}/100`} />
+              <MetricCell label="CMS" value={result.tech_stack.cms || "Desconocido"} />
+              <MetricCell label="Analítica" value={result.tech_stack.analytics.length > 0 ? result.tech_stack.analytics.join(", ") : "Ninguna"} />
+              <MetricCell label="Reservas" value={result.tech_stack.booking_system || "Ninguno"} />
+              <MetricCell label="Chat" value={result.tech_stack.chat_widget || "Ninguno"} />
+              <MetricCell label="Pagos" value={result.tech_stack.payment_processor || "Ninguno"} />
+              <MetricCell label="Madurez" value={`${result.tech_stack.digital_maturity_score}/100`} />
             </div>
           </ModuleCard>
         )}
 
         {result.social_presence && (
           <ModuleCard
-            title="Social Media Presence"
+            title="Presencia en redes sociales"
             icon={<Users className="h-5 w-5" />}
             grade={result.social_presence.grade}
             score={result.social_presence.score}
@@ -391,10 +392,10 @@ function AuditReportView({ report }: { report: Report }) {
             recommendations={result.social_presence.recommendations}
           >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <MetricCell label="Platforms Found" value={result.social_presence.platforms_found} />
-              <MetricCell label="Active" value={result.social_presence.platforms_active} />
-              <MetricCell label="Total Following" value={result.social_presence.total_following.toLocaleString()} />
-              <MetricCell label="NAP Consistent" value={result.social_presence.nap_consistent ? "Yes" : "No"} />
+              <MetricCell label="Plataformas" value={result.social_presence.platforms_found} />
+              <MetricCell label="Activas" value={result.social_presence.platforms_active} />
+              <MetricCell label="Seguidores" value={result.social_presence.total_following.toLocaleString("es-SV")} />
+              <MetricCell label="Datos consistentes" value={result.social_presence.nap_consistent ? "Sí" : "No"} />
             </div>
             <div className="mt-3 space-y-1">
               {result.social_presence.platforms.map((p, idx) => (
@@ -402,9 +403,9 @@ function AuditReportView({ report }: { report: Report }) {
                   <span className="font-medium">{p.name}</span>
                   <div className="flex items-center gap-2">
                     {p.found
-                      ? <Badge variant="secondary" className="text-xs">Found</Badge>
-                      : <Badge variant="outline" className="text-xs text-muted-foreground">Not Found</Badge>}
-                    {p.is_active && <Badge className="text-xs bg-green-100 text-green-800">Active</Badge>}
+                      ? <Badge variant="secondary" className="text-xs">Encontrado</Badge>
+                      : <Badge variant="outline" className="text-xs text-muted-foreground">No encontrado</Badge>}
+                    {p.is_active && <Badge className="text-xs bg-green-100 text-green-800">Activo</Badge>}
                     {p.follower_count !== undefined && (
                       <span className="text-muted-foreground">{p.follower_count.toLocaleString()} followers</span>
                     )}
@@ -417,7 +418,7 @@ function AuditReportView({ report }: { report: Report }) {
 
         {result.citation_consistency && (
           <ModuleCard
-            title="Citation & Directory Consistency"
+            title="Consistencia en directorios"
             icon={<BookOpen className="h-5 w-5" />}
             grade={result.citation_consistency.grade}
             score={result.citation_consistency.score}
@@ -425,20 +426,20 @@ function AuditReportView({ report }: { report: Report }) {
             recommendations={result.citation_consistency.recommendations}
           >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <MetricCell label="Found" value={result.citation_consistency.total_found} />
-              <MetricCell label="Correct" value={result.citation_consistency.total_correct} className="text-green-600" />
-              <MetricCell label="Inconsistent" value={result.citation_consistency.total_inconsistent} className="text-yellow-600" />
-              <MetricCell label="Missing" value={result.citation_consistency.total_missing} className="text-red-600" />
+              <MetricCell label="Encontrados" value={result.citation_consistency.total_found} />
+              <MetricCell label="Correctos" value={result.citation_consistency.total_correct} className="text-green-600" />
+              <MetricCell label="Inconsistentes" value={result.citation_consistency.total_inconsistent} className="text-yellow-600" />
+              <MetricCell label="Faltantes" value={result.citation_consistency.total_missing} className="text-red-600" />
             </div>
             <div className="mt-3 space-y-1">
               {result.citation_consistency.directories.map((d, idx) => (
                 <div key={idx} className="flex items-center justify-between text-xs py-1.5 border-b border-border/50 last:border-0">
                   <span className="font-medium">{d.name}</span>
                   <div className="flex items-center gap-2">
-                    {d.status === "found_correct" && <Badge className="text-xs bg-green-100 text-green-800">Correct</Badge>}
-                    {d.status === "found_inconsistent" && <Badge className="text-xs bg-yellow-100 text-yellow-800">Inconsistent</Badge>}
-                    {d.status === "not_found" && <Badge variant="outline" className="text-xs text-red-600">Not Found</Badge>}
-                    {d.status === "unchecked" && <Badge variant="outline" className="text-xs">Unchecked</Badge>}
+                    {d.status === "found_correct" && <Badge className="text-xs bg-green-100 text-green-800">Correcto</Badge>}
+                    {d.status === "found_inconsistent" && <Badge className="text-xs bg-yellow-100 text-yellow-800">Inconsistente</Badge>}
+                    {d.status === "not_found" && <Badge variant="outline" className="text-xs text-red-600">No encontrado</Badge>}
+                    {d.status === "unchecked" && <Badge variant="outline" className="text-xs">Sin verificar</Badge>}
                   </div>
                 </div>
               ))}
@@ -448,7 +449,7 @@ function AuditReportView({ report }: { report: Report }) {
 
         {result.competitive_comparison && (
           <ModuleCard
-            title="Competitive Analysis"
+            title="Análisis competitivo"
             icon={<Trophy className="h-5 w-5" />}
             grade={result.competitive_comparison.grade}
             score={result.competitive_comparison.score}
@@ -456,7 +457,7 @@ function AuditReportView({ report }: { report: Report }) {
             recommendations={result.competitive_comparison.recommendations}
           >
             <div className="flex items-center gap-3 mb-3">
-              <span className="text-sm text-muted-foreground">Your Position:</span>
+              <span className="text-sm text-muted-foreground">Posición:</span>
               <Badge className={
                 result.competitive_comparison.target_position === "leader"
                   ? "bg-green-100 text-green-800"
@@ -469,7 +470,7 @@ function AuditReportView({ report }: { report: Report }) {
             </div>
             {result.competitive_comparison.strengths.length > 0 && (
               <div className="mb-2">
-                <p className="text-xs font-semibold text-green-700 mb-1">Strengths</p>
+                <p className="text-xs font-semibold text-green-700 mb-1">Fortalezas</p>
                 <div className="flex flex-wrap gap-1">
                   {result.competitive_comparison.strengths.map((s, i) => (
                     <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>
@@ -479,7 +480,7 @@ function AuditReportView({ report }: { report: Report }) {
             )}
             {result.competitive_comparison.weaknesses.length > 0 && (
               <div className="mb-3">
-                <p className="text-xs font-semibold text-red-700 mb-1">Weaknesses</p>
+                <p className="text-xs font-semibold text-red-700 mb-1">Debilidades</p>
                 <div className="flex flex-wrap gap-1">
                   {result.competitive_comparison.weaknesses.map((w, i) => (
                     <Badge key={i} variant="outline" className="text-xs">{w}</Badge>
@@ -493,8 +494,8 @@ function AuditReportView({ report }: { report: Report }) {
                   <span className="font-medium">{c.name}</span>
                   <div className="flex items-center gap-3">
                     {c.rating && <span>{c.rating} &#9733;</span>}
-                    {c.review_count && <span className="text-muted-foreground">{c.review_count} reviews</span>}
-                    <Badge variant="outline" className="text-xs capitalize">{c.estimated_position}</Badge>
+                    {c.review_count && <span className="text-muted-foreground">{c.review_count} reseñas</span>}
+                    <Badge variant="outline" className="text-xs">{translateEnum(c.estimated_position)}</Badge>
                   </div>
                 </div>
               ))}
@@ -506,7 +507,7 @@ function AuditReportView({ report }: { report: Report }) {
           const showRevenueDollars = shouldShowRevenueDollars(result.revenue_impact);
           return (
           <ModuleCard
-            title={showRevenueDollars ? "Revenue Impact Analysis" : "Business Impact Signals"}
+            title={showRevenueDollars ? "Análisis de impacto en ingresos" : "Señales de impacto en el negocio"}
             icon={<DollarSign className="h-5 w-5" />}
             grade={result.revenue_impact.grade}
             score={result.revenue_impact.score}
@@ -516,23 +517,23 @@ function AuditReportView({ report }: { report: Report }) {
             {showRevenueDollars ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mb-3">
                 <div>
-                  <span className="text-muted-foreground">Monthly Leakage (est.)</span>
+                  <span className="text-muted-foreground">Fuga mensual (est.)</span>
                   <p className="font-semibold text-red-600">{formatCurrency(result.revenue_impact.total_monthly_leakage.mid)}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Annual Impact</span>
+                  <span className="text-muted-foreground">Impacto anual</span>
                   <p className="font-semibold text-red-600">{formatCurrency(result.revenue_impact.annual_impact.mid)}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">ROI if Fixed</span>
+                  <span className="text-muted-foreground">ROI al corregir</span>
                   <p className="font-semibold text-green-600">{result.revenue_impact.roi_if_fixed}</p>
                 </div>
               </div>
             ) : (
               <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900 mb-3">
-                <p className="font-semibold">No verified revenue source found</p>
+                <p className="font-semibold">No se encontró una fuente verificada de ingresos</p>
                 <p className="mt-1 text-amber-800">
-                  Public data found business-impact signals, but revenue is private or unverified. This report does not present dollar leakage as an opportunity.
+                  Los datos públicos muestran señales de impacto, pero los ingresos son privados o no verificados. Este reporte no presenta fugas en dólares como oportunidad.
                 </p>
               </div>
             )}
@@ -542,7 +543,7 @@ function AuditReportView({ report }: { report: Report }) {
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium">{leak.category}</span>
                     {showRevenueDollars ? (
-                      <span className="text-red-600 font-semibold">{formatCurrency(leak.mid_estimate)}/mo</span>
+                      <span className="text-red-600 font-semibold">{formatCurrency(leak.mid_estimate)}/mes</span>
                     ) : (
                       <span className="text-muted-foreground font-semibold">{leak.confidence ? `${leak.confidence}/10 confidence` : "Signal"}</span>
                     )}
@@ -570,8 +571,8 @@ function AuditReportView({ report }: { report: Report }) {
                   <Zap className="h-5 w-5" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">Prioritized Recommendations</CardTitle>
-                  <CardDescription>Sorted by impact and effort. Start at the top for the fastest wins.</CardDescription>
+                  <CardTitle className="text-lg">Recomendaciones priorizadas</CardTitle>
+                  <CardDescription>Ordenadas por impacto y esfuerzo: empieza por arriba para lograr victorias rápidas.</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -590,9 +591,9 @@ function AuditReportView({ report }: { report: Report }) {
                           variant={rec.impact === "high" ? "destructive" : rec.impact === "medium" ? "warning" : "secondary"}
                           className="text-xs"
                         >
-                          {rec.impact} impact
+                          Impacto {translateEnum(rec.impact).toLowerCase()}
                         </Badge>
-                        <Badge variant="outline" className="text-xs">{rec.effort} effort</Badge>
+                        <Badge variant="outline" className="text-xs">Esfuerzo {translateEnum(rec.effort).toLowerCase()}</Badge>
                         <Badge variant="secondary" className="text-xs">{rec.module}</Badge>
                         {rec.estimated_revenue_impact && (
                           <Badge variant="success" className="text-xs">
@@ -627,9 +628,9 @@ function ScoutReportView({ report }: { report: Report }) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <AlertCircle className="h-12 w-12 text-muted-foreground" />
-        <h1 className="mt-4 text-2xl font-bold">No Data Available</h1>
+        <h1 className="mt-4 text-2xl font-bold">Sin datos disponibles</h1>
         <p className="mt-2 text-muted-foreground">
-          This scout report does not contain any result data yet.
+          Este reporte de exploración aún no contiene resultados.
         </p>
       </div>
     );
@@ -640,7 +641,7 @@ function ScoutReportView({ report }: { report: Report }) {
       {/* ---- Header ---- */}
       <header className="text-center space-y-4 pb-6 border-b border-border">
         <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
-          Market Scout Report
+          Reporte de exploración de mercado
         </p>
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
           {input.category} in {input.city}
@@ -657,12 +658,12 @@ function ScoutReportView({ report }: { report: Report }) {
             <div className="flex items-start gap-3">
               <TrendingUp className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div>
-                <h2 className="font-semibold text-lg mb-2">Market Summary</h2>
+                <h2 className="font-semibold text-lg mb-2">Resumen del mercado</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {result.market_summary}
                 </p>
                 <div className="mt-3">
-                  <span className="text-xs text-muted-foreground">Avg. Digital Maturity:</span>{" "}
+                  <span className="text-xs text-muted-foreground">Madurez digital promedio:</span>{" "}
                   <span className="text-sm font-semibold">{result.avg_digital_maturity}/100</span>
                 </div>
               </div>
@@ -673,7 +674,7 @@ function ScoutReportView({ report }: { report: Report }) {
 
       {/* ---- Ranked Business List ---- */}
       <section className="space-y-4">
-        <h2 className="text-xl font-bold tracking-tight">Ranked Businesses</h2>
+        <h2 className="text-xl font-bold tracking-tight">Negocios clasificados</h2>
         {result.businesses.map((biz, idx) => (
           <Card key={idx} className="overflow-hidden">
             <CardContent className="p-4 sm:p-6">
@@ -754,16 +755,16 @@ function ScoutReportView({ report }: { report: Report }) {
       <section className="text-center py-8">
         <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
           <CardContent className="py-8">
-            <h2 className="text-xl font-bold mb-2">Ready to dig deeper?</h2>
+            <h2 className="text-xl font-bold mb-2">¿Quieres profundizar?</h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-lg mx-auto">
-              Run a full 8-module audit on any of these businesses to get
-              detailed findings, revenue impact analysis, and prioritized recommendations.
+              Ejecuta una auditoría completa de 8 módulos sobre cualquiera de estos negocios para obtener
+              hallazgos detallados, análisis de impacto y recomendaciones priorizadas.
             </p>
             <a
               href={APP_URL}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              Run Full Audits <ExternalLink className="h-4 w-4" />
+              Ejecutar auditorías <ExternalLink className="h-4 w-4" />
             </a>
           </CardContent>
         </Card>
@@ -781,14 +782,14 @@ function ScoutReportView({ report }: { report: Report }) {
 
 function ModuleScorecardRow({ scores }: { scores: ReportScores }) {
   const modules: { key: keyof ReportScores["module_grades"]; label: string; icon: React.ReactNode }[] = [
-    { key: "gbp_health", label: "GBP", icon: <MapPin className="h-3.5 w-3.5" /> },
-    { key: "review_sentiment", label: "Reviews", icon: <Star className="h-3.5 w-3.5" /> },
-    { key: "website_performance", label: "Website", icon: <Globe className="h-3.5 w-3.5" /> },
-    { key: "tech_stack", label: "Tech", icon: <Cpu className="h-3.5 w-3.5" /> },
-    { key: "social_presence", label: "Social", icon: <Users className="h-3.5 w-3.5" /> },
-    { key: "citation_consistency", label: "Citations", icon: <BookOpen className="h-3.5 w-3.5" /> },
-    { key: "competitive_position", label: "Compete", icon: <Trophy className="h-3.5 w-3.5" /> },
-    { key: "revenue_impact", label: "Revenue", icon: <DollarSign className="h-3.5 w-3.5" /> },
+    { key: "gbp_health", label: "Google", icon: <MapPin className="h-3.5 w-3.5" /> },
+    { key: "review_sentiment", label: "Reseñas", icon: <Star className="h-3.5 w-3.5" /> },
+    { key: "website_performance", label: "Sitio web", icon: <Globe className="h-3.5 w-3.5" /> },
+    { key: "tech_stack", label: "Tecnología", icon: <Cpu className="h-3.5 w-3.5" /> },
+    { key: "social_presence", label: "Redes", icon: <Users className="h-3.5 w-3.5" /> },
+    { key: "citation_consistency", label: "Directorios", icon: <BookOpen className="h-3.5 w-3.5" /> },
+    { key: "competitive_position", label: "Competencia", icon: <Trophy className="h-3.5 w-3.5" /> },
+    { key: "revenue_impact", label: "Ingresos", icon: <DollarSign className="h-3.5 w-3.5" /> },
   ];
 
   const gradeColorMap: Record<string, string> = {
@@ -813,9 +814,9 @@ function ModuleScorecardRow({ scores }: { scores: ReportScores }) {
             >
               <div className="text-muted-foreground">{m.icon}</div>
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-md border text-sm font-bold ${gradeColorMap[grade] || gradeColorMap.F}`}
+                className={`flex min-h-8 items-center justify-center rounded-full border px-2 text-[11px] font-semibold ${gradeColorMap[grade] || gradeColorMap.F}`}
               >
-                {grade}
+                {localizeGrade(grade)}
               </div>
               <span className="text-[10px] text-muted-foreground leading-tight">{m.label}</span>
             </div>
@@ -847,22 +848,23 @@ function ReportFooter() {
   return (
     <footer className="pt-8 pb-4 border-t border-border text-center space-y-3">
       <p className="text-xs text-muted-foreground">
-        Powered by{" "}
+        Elaborado por{" "}
         <a
-          href={APP_URL}
+          href={BRAND.website}
           className="font-semibold text-foreground hover:text-primary transition-colors"
         >
-          Phantom Reach
+          {BRAND.company}
         </a>
+        {" · "}{BRAND.email} · {BRAND.phone}
       </p>
       <a
-        href={APP_URL}
-        className="inline-flex items-center gap-2 rounded-lg border border-primary/30 px-5 py-2.5 text-sm font-medium text-primary hover:bg-primary/5 transition-colors"
+        href={BRAND.website}
+        className="press inline-flex items-center gap-2 rounded-full border border-primary/30 px-5 py-2.5 text-sm font-medium text-primary hover:bg-primary/5"
       >
-        Get your free business audit <ExternalLink className="h-3.5 w-3.5" />
+        Conoce Cyber Valtorix <ExternalLink className="h-3.5 w-3.5" />
       </a>
       <p className="text-[10px] text-muted-foreground mt-4">
-        This report was generated automatically. Results are estimates based on publicly available data.
+        Reporte generado automáticamente. Los resultados son estimaciones basadas en datos públicos.
       </p>
     </footer>
   );

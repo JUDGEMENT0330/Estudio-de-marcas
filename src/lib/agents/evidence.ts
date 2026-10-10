@@ -11,47 +11,47 @@ const MODULE_META: Record<
   { label: string; source: string; settingsKey?: string }
 > = {
   gbp_health: {
-    label: "Google Business Profile",
+    label: "Perfil de Google Business",
     source: "Google Places",
     settingsKey: "google_places_api_key",
   },
   review_sentiment: {
-    label: "Reviews & Reputation",
+    label: "Reseñas y reputación",
     source: "Google Places / Yelp",
   },
   website_performance: {
-    label: "Website Performance",
+    label: "Rendimiento del sitio web",
     source: "Google PageSpeed",
     settingsKey: "google_pagespeed_api_key",
   },
   tech_stack: {
-    label: "Technology Stack",
+    label: "Tecnología",
     source: "Website HTML",
   },
   social_presence: {
-    label: "Social Presence",
-    source: "Website links",
+    label: "Presencia social",
+    source: "Enlaces del sitio web",
   },
   citation_consistency: {
-    label: "Citation Consistency",
-    source: "Directory listings",
+    label: "Consistencia en directorios",
+    source: "Directorios en línea",
   },
   competitive_comparison: {
-    label: "Competitive Comparison",
+    label: "Comparación competitiva",
     source: "Google Places",
     settingsKey: "google_places_api_key",
   },
   revenue_impact: {
-    label: "Revenue Impact",
-    source: "Local calculation",
+    label: "Impacto en ingresos",
+    source: "Cálculo interno",
   },
   business_intelligence: {
-    label: "Business Intelligence",
-    source: "Local probes",
+    label: "Inteligencia comercial",
+    source: "Sondas de señales",
   },
   business_enrichment: {
-    label: "Business Context",
-    source: "Public sources",
+    label: "Contexto del negocio",
+    source: "Fuentes públicas",
   },
 };
 

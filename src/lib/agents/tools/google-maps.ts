@@ -174,7 +174,7 @@ export async function lookupGoogleMaps(
     return unavailable(
       "google_maps",
       "missing_api_key",
-      "Set GOOGLE_PLACES_API_KEY to collect Google Business Profile data."
+      "Configura GOOGLE_PLACES_API_KEY para obtener datos del perfil de Google Business."
     );
   }
 
@@ -185,7 +185,7 @@ export async function lookupGoogleMaps(
       return unavailable(
         "google_maps",
         "not_found",
-        `No Google Maps results found for "${params.businessName}".`
+        `No se encontraron resultados en Google Maps para "${params.businessName}".`
       );
     }
 
@@ -194,7 +194,7 @@ export async function lookupGoogleMaps(
       return unavailable(
         "google_maps",
         "not_found",
-        `Could not load Google Business Profile details for "${params.businessName}".`
+        `No se pudieron cargar los detalles del perfil de Google Business de "${params.businessName}".`
       );
     }
 
@@ -203,24 +203,24 @@ export async function lookupGoogleMaps(
     const recommendations: string[] = [];
 
     if (!details.website) {
-      findings.push("No website linked to Google Business Profile");
-      recommendations.push("Add a website URL to your Google Business Profile to drive traffic");
+      findings.push("El perfil de Google Business no tiene sitio web enlazado");
+      recommendations.push("Agregar la URL del sitio web al perfil de Google Business para generar tráfico");
     }
     if (!details.phone) {
-      findings.push("No phone number listed on Google Business Profile");
-      recommendations.push("Add a phone number - it is the main way customers contact local businesses");
+      findings.push("El perfil de Google Business no muestra número de teléfono");
+      recommendations.push("Agregar un número de teléfono: es la principal vía de contacto de los clientes con negocios locales");
     }
     if ((details.photos_count || 0) < 5) {
-      findings.push(`Only ${details.photos_count || 0} photos on profile (minimum 10 recommended)`);
-      recommendations.push("Add more photos to improve engagement from Maps searchers");
+      findings.push(`Solo ${details.photos_count || 0} fotos en el perfil (se recomiendan al menos 10)`);
+      recommendations.push("Agregar más fotos para mejorar la interacción de quienes buscan en Maps");
     }
     if (!details.operating_hours || Object.keys(details.operating_hours).length === 0) {
-      findings.push("Business hours not set on Google Business Profile");
-      recommendations.push("Add complete business hours including special hours for holidays");
+      findings.push("El perfil de Google Business no tiene horarios configurados");
+      recommendations.push("Agregar horarios completos, incluidos horarios especiales para feriados");
     }
     if (!details.description) {
-      findings.push("No business description on Google Business Profile");
-      recommendations.push("Write a clear business description highlighting services and differentiators");
+      findings.push("El perfil de Google Business no tiene descripción del negocio");
+      recommendations.push("Redactar una descripción clara que destaque servicios y diferenciadores");
     }
 
     const analysis: GBPHealthResult = {
@@ -248,7 +248,7 @@ export async function lookupGoogleMaps(
     return unavailable(
       "google_maps",
       "failed",
-      `Google Maps lookup failed: ${err.message}`
+      `La búsqueda en Google Maps falló: ${err.message}`
     );
   }
 }
