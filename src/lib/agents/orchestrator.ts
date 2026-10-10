@@ -1171,43 +1171,43 @@ function generateExecutiveSummaryTemplate(
 
   // Build key stats from available module data
   const key_stats: { label: string; value: string; sentiment: "positive" | "negative" | "neutral" }[] = [];
-  if (gbp?.rating) key_stats.push({ label: "Rating", value: `${gbp.rating}★`, sentiment: gbp.rating >= 4.0 ? "positive" : gbp.rating >= 3.0 ? "neutral" : "negative" });
-  if (gbp?.review_count !== undefined) key_stats.push({ label: "Reviews", value: `${gbp.review_count}`, sentiment: gbp.review_count >= 50 ? "positive" : gbp.review_count >= 10 ? "neutral" : "negative" });
-  if (website?.performance_score !== undefined) key_stats.push({ label: "Speed", value: `${website.performance_score}`, sentiment: website.performance_score >= 70 ? "positive" : website.performance_score >= 50 ? "neutral" : "negative" });
-  if (tech?.digital_maturity_score !== undefined) key_stats.push({ label: "Tech", value: `${tech.digital_maturity_score}`, sentiment: tech.digital_maturity_score >= 60 ? "positive" : tech.digital_maturity_score >= 30 ? "neutral" : "negative" });
-  if (citations) key_stats.push({ label: "Citations", value: `${citations.total_found > 0 ? Math.round((citations.total_correct / citations.total_found) * 100) : 0}%`, sentiment: citations.total_correct === citations.total_found ? "positive" : "negative" });
+  if (gbp?.rating) key_stats.push({ label: "Calificación", value: `${gbp.rating}★`, sentiment: gbp.rating >= 4.0 ? "positive" : gbp.rating >= 3.0 ? "neutral" : "negative" });
+  if (gbp?.review_count !== undefined) key_stats.push({ label: "Reseñas", value: `${gbp.review_count}`, sentiment: gbp.review_count >= 50 ? "positive" : gbp.review_count >= 10 ? "neutral" : "negative" });
+  if (website?.performance_score !== undefined) key_stats.push({ label: "Velocidad", value: `${website.performance_score}`, sentiment: website.performance_score >= 70 ? "positive" : website.performance_score >= 50 ? "neutral" : "negative" });
+  if (tech?.digital_maturity_score !== undefined) key_stats.push({ label: "Tecnología", value: `${tech.digital_maturity_score}`, sentiment: tech.digital_maturity_score >= 60 ? "positive" : tech.digital_maturity_score >= 30 ? "neutral" : "negative" });
+  if (citations) key_stats.push({ label: "Directorios", value: `${citations.total_found > 0 ? Math.round((citations.total_correct / citations.total_found) * 100) : 0}%`, sentiment: citations.total_correct === citations.total_found ? "positive" : "negative" });
   if (revenue?.show_revenue_dollars) {
-    key_stats.push({ label: "Leak/mo", value: formatRevenueLeakValue(revenue.total_monthly_leakage.mid), sentiment: "negative" });
+    key_stats.push({ label: "Fuga/mes", value: formatRevenueLeakValue(revenue.total_monthly_leakage.mid), sentiment: "negative" });
   } else if (revenue?.opportunity_assessment) {
-    key_stats.push({ label: "Impact", value: revenue.opportunity_assessment.impact_level === "not_material" ? "Minor" : revenue.opportunity_assessment.impact_level.replace(/_/g, " ").slice(0, 6), sentiment: revenue.opportunity_assessment.impact_level === "high" ? "negative" : "neutral" });
+    key_stats.push({ label: "Impacto", value: ({ not_material: "Menor", low: "Bajo", moderate: "Medio", medium: "Medio", high: "Alto", significant: "Alto" } as Record<string, string>)[revenue.opportunity_assessment.impact_level] ?? "Medio", sentiment: revenue.opportunity_assessment.impact_level === "high" ? "negative" : "neutral" });
   }
 
   return {
     verdict_tier,
-    verdict_headline: `${gradeLabel} Digital Foundation`,
-    verdict_subline: `${businessName} scores ${overallScore}/100 on overall digital health.`,
+    verdict_headline: `Presencia digital: ${gradeLabel.toLowerCase()}`,
+    verdict_subline: `${businessName} obtiene ${overallScore}/100 en salud digital general.`,
     key_stats,
     top_strength: {
       module: "General",
-      headline: `${overallScore}/100 overall score`,
-      detail: "Baseline digital presence established."
+      headline: `Calificación general de ${overallScore}/100`,
+      detail: "Existe una presencia digital base sobre la cual construir."
     },
     critical_gap: {
       module: "General",
-      headline: "Gaps costing revenue",
-      detail: "Significant digital gaps are likely impacting customer acquisition."
+      headline: "Brechas que restan clientes",
+      detail: "Hay brechas digitales relevantes que probablemente afectan la captación de clientes."
     },
     three_insights: [
-      `${businessName} has a ${overallScore}/100 digital health score.`,
-      revenue?.show_revenue_dollars ? `Estimated $${revenue.total_monthly_leakage.mid.toLocaleString()}/mo revenue leakage.` : "Business impact is shown as digital signals because revenue was not verified.",
-      "Foundational improvements can yield immediate visibility gains."
+      `${businessName} tiene una salud digital de ${overallScore}/100.`,
+      revenue?.show_revenue_dollars ? `Fuga estimada de ingresos: $${revenue.total_monthly_leakage.mid.toLocaleString()}/mes.` : "El impacto se presenta como señales digitales porque los ingresos no fueron verificados.",
+      "Las mejoras de base pueden dar ganancias inmediatas de visibilidad."
     ],
-    hidden_opportunity: "Quick wins in directory optimization could provide immediate visibility boost.",
+    hidden_opportunity: "Optimizar directorios y perfiles es una victoria rápida para ganar visibilidad.",
     path_forward: [
-      { priority: 1, action: "Claim and optimize all directory listings", outcome: "Improved local search visibility" },
-      { priority: 2, action: "Install analytics and conversion tracking", outcome: "Measure what's working" },
-      { priority: 3, action: "Address top review themes", outcome: "Improve ratings and trust signals" },
+      { priority: 1, action: "Reclamar y optimizar los perfiles en directorios", outcome: "Mejor visibilidad en búsquedas locales" },
+      { priority: 2, action: "Instalar analítica y seguimiento de conversiones", outcome: "Medir qué funciona" },
+      { priority: 3, action: "Atender los temas principales de las reseñas", outcome: "Mejorar calificaciones y confianza" },
     ],
-    bottom_line: "Fixing foundational issues will provide a real starting point to build on.",
+    bottom_line: "Corregir lo fundamental crea un punto de partida real para crecer.",
   };
 }

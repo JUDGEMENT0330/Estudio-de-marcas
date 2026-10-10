@@ -1,4 +1,14 @@
-# Phantom Reach Agent Playbook
+# Estudio de Marcas (Cyber Valtorix) — Agent Playbook
+
+> Fork en español de Phantom Reach. Reglas adicionales de este fork:
+> - Toda la UI, los mensajes de API y los documentos exportados están en **español**. Mantén los textos nuevos en español (es-419).
+> - La IA redacta en español mediante `outputLanguageDirective()` en `src/lib/ai/claude.ts`; los prompts internos pueden seguir en inglés.
+> - Los documentos usan la identidad de **Cyber Valtorix** (`src/lib/brand/`, `src/lib/exports/doc-brand.ts`); el contenido sale de `src/lib/exports/doc-content.ts`.
+> - Debe funcionar en local (SQLite) **y** en Vercel (Redis/KV vía `src/lib/db/kv-store.ts`, `after()` para trabajo en segundo plano). No dependas de escribir en disco fuera de `getDataDir()`.
+> - Nunca subas `private/` ni la firma/sello: el repositorio es público.
+> - Estilo visual: lenguaje de diseño tipo Apple (tokens en `src/app/globals.css`).
+
+# Phantom Reach Agent Playbook (original)
 
 This file is the canonical instruction file for coding assistants working in this repository. Keep tool-specific files such as `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`, Cursor rules, Continue rules, and Aider conventions as short pointers back here.
 

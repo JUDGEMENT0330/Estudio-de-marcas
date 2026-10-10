@@ -49,7 +49,7 @@ function dependenciesInstalled() {
 
 function ensureDependencies() {
   if (dependenciesInstalled()) return;
-  console.log("Installing local dependencies. This can take a few minutes the first time...");
+  console.log("Instalando dependencias locales. La primera vez puede tardar unos minutos...");
   runSync("npm", ["install"]);
 }
 
@@ -178,7 +178,7 @@ async function restartStalePhantomServerIfNeeded() {
     );
   }
 
-  console.log(`Restarting existing Phantom Reach server on port ${PORT}...`);
+  console.log(`Reiniciando el servidor de Estudio de Marcas en el puerto ${PORT}...`);
   for (const pid of pids) {
     try {
       killPidTree(pid);
@@ -190,7 +190,7 @@ async function restartStalePhantomServerIfNeeded() {
 }
 
 function startNextDev() {
-  console.log(`Starting Phantom Reach at http://${HOST}:${PORT}`);
+  console.log(`Iniciando Estudio de Marcas en http://${HOST}:${PORT}`);
   const child = run("npm", ["run", "dev", "--", "--hostname", HOST, "--port", String(PORT)]);
 
   child.on("exit", (code) => {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { contentDisposition } from "@/lib/exports/doc-brand";
 import { requireOwnedReport, requireRouteUser } from "@/lib/auth/route";
 import { generateReportDOCX } from "@/lib/exports/generate-docx";
 import { sanitizeAuditResultContent } from "@/lib/reports/content-contract";
@@ -32,15 +33,12 @@ export async function GET(
     const exportReport = report.type === "audit"
       ? { ...report, result: sanitizeAuditResultContent(report.result as any) }
       : report;
-    const buffer = await generateReportDOCX(exportReport);
-
-    const businessName = (report.input as any).businessName || "Business";
-    const filename = `${businessName.replace(/[^a-zA-Z0-9]/g, "_")}_Audit_Report.docx`;
+    const buffer = await generateReportDOCX(exportReport, user.white_label_config);
 
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Disposition": contentDisposition(report, "docx"),
       },
     });
   } catch (err: any) {

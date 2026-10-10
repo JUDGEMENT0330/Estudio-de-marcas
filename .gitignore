@@ -68,3 +68,7 @@ Thumbs.db
 coverage/
 .turbo/
 
+
+# Firma y sello: archivo privado, nunca subirlo a un repo público
+public/brand/firma-sello.png
+private/

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { contentDisposition } from "@/lib/exports/doc-brand";
 import { requireOwnedReport, requireRouteUser } from "@/lib/auth/route";
 import { generateReportXLSX } from "@/lib/exports/generate-xlsx";
 import { sanitizeAuditResultContent } from "@/lib/reports/content-contract";
@@ -32,15 +33,12 @@ export async function GET(
     const exportReport = report.type === "audit"
       ? { ...report, result: sanitizeAuditResultContent(report.result as any) }
       : report;
-    const buffer = await generateReportXLSX(exportReport);
-
-    const businessName = (report.input as any).businessName || "Business";
-    const filename = `${businessName.replace(/[^a-zA-Z0-9]/g, "_")}_Audit_Data.xlsx`;
+    const buffer = await generateReportXLSX(exportReport, user.white_label_config);
 
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Disposition": contentDisposition(report, "xlsx"),
       },
     });
   } catch (err: any) {

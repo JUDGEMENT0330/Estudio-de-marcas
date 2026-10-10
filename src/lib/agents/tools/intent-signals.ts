@@ -119,8 +119,8 @@ function signalsFromOpenCorporates(co: OpenCorpCompany): BusinessIntelligenceSig
     if (ageMonths <= 24) {
       signals.push({
         type: "recent_incorporation",
-        headline: `Recently incorporated (${incDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })})`,
-        detail: `${co.name} was filed as ${co.company_type || "a business entity"} in ${co.jurisdiction_code.replace("us_", "").toUpperCase()} just ${Math.round(ageMonths)} months ago. New businesses typically invest heavily in digital presence within their first 2 years.`,
+        headline: `Constituida recientemente (${incDate.toLocaleDateString("es-SV", { month: "short", year: "numeric" })})`,
+        detail: `${co.name} se registró como ${co.company_type || "entidad comercial"} en ${co.jurisdiction_code.replace("us_", "").toUpperCase()} hace solo ${Math.round(ageMonths)} meses. Los negocios nuevos suelen invertir fuerte en presencia digital en sus primeros 2 años.`,
         source: "OpenCorporates",
         confidence: "high",
         date: co.incorporation_date,
@@ -131,8 +131,8 @@ function signalsFromOpenCorporates(co: OpenCorpCompany): BusinessIntelligenceSig
     // Business filing found (always informative)
     signals.push({
       type: "business_filing",
-      headline: `Registered ${co.company_type || "business"} in ${co.jurisdiction_code.replace("us_", "").toUpperCase()}`,
-      detail: `Official filing found: ${co.name} (${co.company_number}), status: ${co.current_status || "active"}. Incorporated ${incDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.`,
+      headline: `${co.company_type || "Negocio"} registrado en ${co.jurisdiction_code.replace("us_", "").toUpperCase()}`,
+      detail: `Registro oficial encontrado: ${co.name} (${co.company_number}), estado: ${co.current_status || "activo"}. Constituida el ${incDate.toLocaleDateString("es-SV", { month: "long", day: "numeric", year: "numeric" })}.`,
       source: "OpenCorporates",
       confidence: "high",
       date: co.incorporation_date,
@@ -151,8 +151,8 @@ function signalsFromModuleData(params: IntentSignalsParams): BusinessIntelligenc
     if (params.techStack.domain_age_years < 1) {
       signals.push({
         type: "domain_age",
-        headline: "Brand-new domain registered this year",
-        detail: `The website domain is less than 1 year old — this often indicates a new business, rebrand, or expansion. Businesses with new domains need SEO and digital marketing the most.`,
+        headline: "Dominio registrado este mismo año",
+        detail: `El dominio del sitio tiene menos de 1 año: suele indicar un negocio nuevo, un cambio de marca o una expansión. Son los negocios que más necesitan SEO y marketing digital.`,
         source: "Domain WHOIS",
         confidence: "high",
         icon_hint: "calendar",
@@ -160,8 +160,8 @@ function signalsFromModuleData(params: IntentSignalsParams): BusinessIntelligenc
     } else if (params.techStack.domain_age_years > 10) {
       signals.push({
         type: "domain_age",
-        headline: `Established online presence (${params.techStack.domain_age_years}+ year domain)`,
-        detail: `Domain has been registered for over ${params.techStack.domain_age_years} years, indicating a well-established business with brand equity.`,
+        headline: `Presencia en línea consolidada (dominio de ${params.techStack.domain_age_years}+ años)`,
+        detail: `El dominio está registrado desde hace más de ${params.techStack.domain_age_years} años: un negocio consolidado con valor de marca.`,
         source: "Domain WHOIS",
         confidence: "high",
         icon_hint: "building",
@@ -173,8 +173,8 @@ function signalsFromModuleData(params: IntentSignalsParams): BusinessIntelligenc
   if (params.reviewSentiment?.review_velocity && params.reviewSentiment.review_velocity >= 8) {
     signals.push({
       type: "rapid_growth",
-      headline: `High review velocity: ${params.reviewSentiment.review_velocity} reviews/month`,
-      detail: `This business is receiving ${params.reviewSentiment.review_velocity} new Google reviews per month — significantly above average for local businesses (2-4/mo). This suggests rapid customer growth or an active review management strategy.`,
+      headline: `Alto ritmo de reseñas: ${params.reviewSentiment.review_velocity} por mes`,
+      detail: `Este negocio recibe ${params.reviewSentiment.review_velocity} reseñas nuevas en Google por mes, muy por encima del promedio local (2-4/mes). Sugiere crecimiento rápido de clientes o una gestión activa de reseñas.`,
       source: "Google Reviews",
       confidence: "high",
       icon_hint: "trending-up",
@@ -185,8 +185,8 @@ function signalsFromModuleData(params: IntentSignalsParams): BusinessIntelligenc
   if (params.reviewSentiment?.trend_direction === "improving" && params.reviewSentiment?.google_rating && params.reviewSentiment.google_rating >= 4.0) {
     signals.push({
       type: "rapid_growth",
-      headline: "Reputation trajectory is upward",
-      detail: `Review sentiment is improving with a ${params.reviewSentiment.google_rating}-star Google rating. Businesses on an upswing typically invest in marketing to capitalize on momentum.`,
+      headline: "La reputación va en ascenso",
+      detail: `El sentimiento de las reseñas mejora, con ${params.reviewSentiment.google_rating} estrellas en Google. Los negocios en ascenso suelen invertir en marketing para aprovechar el impulso.`,
       source: "Sentiment Analysis",
       confidence: "medium",
       icon_hint: "trending-up",
@@ -197,8 +197,8 @@ function signalsFromModuleData(params: IntentSignalsParams): BusinessIntelligenc
   if (params.gbpHealth && !params.gbpHealth.website) {
     signals.push({
       type: "expansion_signal",
-      headline: "No website linked to Google Business Profile",
-      detail: `This business has a Google listing but no website. They are missing 70%+ of potential online leads. This is the strongest signal that they need digital services immediately.`,
+      headline: "El perfil de Google Business no tiene sitio web enlazado",
+      detail: `El negocio aparece en Google pero sin sitio web: pierde más del 70% de los prospectos potenciales en línea. Es la señal más clara de que necesita servicios digitales de inmediato.`,
       source: "Google Business Profile",
       confidence: "high",
       icon_hint: "zap",
@@ -214,8 +214,8 @@ function signalsFromModuleData(params: IntentSignalsParams): BusinessIntelligenc
   ) {
     signals.push({
       type: "expansion_signal",
-      headline: "Strong reputation but weak digital infrastructure",
-      detail: `With a ${params.gbpHealth.rating}-star rating but only ${params.techStack.digital_maturity_score}/100 digital maturity, this business has loyal customers but isn't converting online traffic effectively. A huge opportunity for digital services.`,
+      headline: "Buena reputación, infraestructura digital débil",
+      detail: `Con ${params.gbpHealth.rating} estrellas pero solo ${params.techStack.digital_maturity_score}/100 de madurez digital, el negocio tiene clientes leales pero no convierte bien el tráfico en línea. Gran oportunidad para servicios digitales.`,
       source: "Tech Stack + GBP Analysis",
       confidence: "high",
       icon_hint: "zap",
@@ -226,8 +226,8 @@ function signalsFromModuleData(params: IntentSignalsParams): BusinessIntelligenc
   if (params.citationConsistency && params.citationConsistency.total_missing >= 5) {
     signals.push({
       type: "new_location",
-      headline: `Missing from ${params.citationConsistency.total_missing} major directories`,
-      detail: `This business is not listed on ${params.citationConsistency.total_missing} out of 12 major directories. This pattern often indicates a newer location, recent move, or a business that hasn't invested in directory management.`,
+      headline: `Ausente en ${params.citationConsistency.total_missing} directorios principales`,
+      detail: `El negocio no aparece en ${params.citationConsistency.total_missing} de 12 directorios principales. Suele indicar una sede nueva, una mudanza reciente o falta de gestión de directorios.`,
       source: "Citation Scan",
       confidence: "medium",
       icon_hint: "map-pin",
@@ -238,8 +238,8 @@ function signalsFromModuleData(params: IntentSignalsParams): BusinessIntelligenc
   if (params.socialPresence && params.socialPresence.platforms_found === 0) {
     signals.push({
       type: "expansion_signal",
-      headline: "Zero social media presence detected",
-      detail: `No social media profiles were found for this business. In 2024, this is extremely rare and indicates a business that has not yet embraced digital marketing. High opportunity for a full digital buildout.`,
+      headline: "Sin presencia en redes sociales",
+      detail: `No se encontraron perfiles en redes sociales. Hoy es muy poco común e indica un negocio que aún no adopta el marketing digital: alta oportunidad para construir su presencia completa.`,
       source: "Social Scan",
       confidence: "high",
       icon_hint: "users",
@@ -247,8 +247,8 @@ function signalsFromModuleData(params: IntentSignalsParams): BusinessIntelligenc
   } else if (params.socialPresence && params.socialPresence.platforms_active === 0 && params.socialPresence.platforms_found > 0) {
     signals.push({
       type: "expansion_signal",
-      headline: "Social accounts exist but are dormant",
-      detail: `Found ${params.socialPresence.platforms_found} social profiles but none are actively posting. This business has set up accounts but abandoned them — they may be ready to re-engage with the right partner.`,
+      headline: "Cuentas sociales creadas pero inactivas",
+      detail: `Se encontraron ${params.socialPresence.platforms_found} perfiles sociales, pero ninguno publica activamente. El negocio creó las cuentas y las abandonó: podría estar listo para reactivarlas con el aliado correcto.`,
       source: "Social Scan",
       confidence: "medium",
       icon_hint: "users",
@@ -264,8 +264,8 @@ function signalsFromModuleData(params: IntentSignalsParams): BusinessIntelligenc
   ) {
     signals.push({
       type: "expansion_signal",
-      headline: "Popular business with underperforming website",
-      detail: `${params.gbpHealth.review_count} Google reviews show strong demand, but the website scores only ${params.websitePerformance.performance_score}/100 on performance. Customers are finding them despite the website, not because of it.`,
+      headline: "Negocio popular con un sitio web de bajo rendimiento",
+      detail: `${params.gbpHealth.review_count} reseñas en Google muestran fuerte demanda, pero el sitio obtiene solo ${params.websitePerformance.performance_score}/100 en rendimiento. Los clientes los encuentran a pesar del sitio, no gracias a él.`,
       source: "PageSpeed + GBP Analysis",
       confidence: "high",
       icon_hint: "zap",
@@ -301,8 +301,8 @@ async function probeWaybackMachine(url: string): Promise<BusinessIntelligenceSig
       if (age >= 10) {
         signals.push({
           type: "domain_age",
-          headline: `Website archived since ${year} (${age}+ years online)`,
-          detail: `The Wayback Machine has snapshots of this site going back to ${year}. A ${age}-year web presence indicates an established business with long-term brand equity.`,
+          headline: `Sitio archivado desde ${year} (${age}+ años en línea)`,
+          detail: `Wayback Machine tiene capturas de este sitio desde ${year}. Una presencia web de ${age} años indica un negocio consolidado con valor de marca a largo plazo.`,
           source: "Wayback Machine",
           confidence: "high",
           date: `${year}-01-01`,
@@ -311,8 +311,8 @@ async function probeWaybackMachine(url: string): Promise<BusinessIntelligenceSig
       } else if (age <= 1) {
         signals.push({
           type: "domain_age",
-          headline: "Website first appeared online recently",
-          detail: `First Wayback Machine snapshot is from ${year}. This is a new or recently rebuilt website — the business may be in growth mode or undergoing a rebrand.`,
+          headline: "El sitio web apareció en línea recientemente",
+          detail: `La primera captura en Wayback Machine es de ${year}. Es un sitio nuevo o reconstruido: el negocio podría estar creciendo o renovando su marca.`,
           source: "Wayback Machine",
           confidence: "medium",
           date: `${year}-01-01`,
@@ -323,8 +323,8 @@ async function probeWaybackMachine(url: string): Promise<BusinessIntelligenceSig
       // No Wayback snapshots at all
       signals.push({
         type: "domain_age",
-        headline: "No web archive history found",
-        detail: "The Wayback Machine has no snapshots of this website. This usually means the site is very new, recently launched, or blocks archiving — all indicators of a business early in its digital journey.",
+        headline: "Sin historial en archivos web",
+        detail: "Wayback Machine no tiene capturas de este sitio. Suele significar que es muy nuevo o que bloquea el archivado: señales de un negocio al inicio de su camino digital.",
         source: "Wayback Machine",
         confidence: "medium",
         icon_hint: "calendar",
@@ -359,8 +359,8 @@ async function probeMXRecords(domain: string): Promise<BusinessIntelligenceSigna
       if (mxString.includes("aspmx") || mxString.includes("googlemail")) {
         signals.push({
           type: "expansion_signal",
-          headline: "Using Google Workspace for business email",
-          detail: `Business email runs on Google Workspace — indicates some level of digital investment. However, many businesses on Google Workspace still lack proper marketing infrastructure.`,
+          headline: "Usa Google Workspace para su correo corporativo",
+          detail: `El correo corporativo funciona con Google Workspace: hay cierta inversión digital, aunque muchos negocios con Workspace aún carecen de infraestructura de marketing.`,
           source: "DNS MX Records",
           confidence: "medium",
           icon_hint: "briefcase",
@@ -369,8 +369,8 @@ async function probeMXRecords(domain: string): Promise<BusinessIntelligenceSigna
     } else if (mxString.includes("outlook") || mxString.includes("microsoft")) {
       signals.push({
         type: "expansion_signal",
-        headline: "Using Microsoft 365 for business email",
-        detail: `Business email runs on Microsoft 365 — suggests an established operations setup. May indicate a business that invests in tools but potentially underinvests in web presence.`,
+        headline: "Usa Microsoft 365 para su correo corporativo",
+        detail: `El correo corporativo funciona con Microsoft 365: operación establecida. Puede indicar que invierte en herramientas pero poco en presencia web.`,
         source: "DNS MX Records",
         confidence: "medium",
         icon_hint: "briefcase",
@@ -378,8 +378,8 @@ async function probeMXRecords(domain: string): Promise<BusinessIntelligenceSigna
     } else if (mxHosts.length === 0) {
       signals.push({
         type: "expansion_signal",
-        headline: "No business email configured on domain",
-        detail: `No MX records found for the business domain. They're likely using a free email provider (Gmail, Yahoo) for business communications — a strong signal they need digital infrastructure help.`,
+        headline: "Sin correo corporativo en el dominio",
+        detail: `No hay registros MX en el dominio. Probablemente usan un correo gratuito (Gmail, Yahoo) para el negocio: señal clara de que necesitan apoyo en infraestructura digital.`,
         source: "DNS MX Records",
         confidence: "high",
         icon_hint: "zap",
@@ -407,8 +407,8 @@ async function probeSEOBasics(url: string): Promise<BusinessIntelligenceSignal[]
   if (!hasRobots && !hasSitemap) {
     signals.push({
       type: "expansion_signal",
-      headline: "No robots.txt or sitemap.xml — SEO basics missing",
-      detail: `The website has neither a robots.txt nor a sitemap.xml file. These are fundamental SEO requirements that help search engines discover and index content. Their absence suggests no SEO work has been done.`,
+      headline: "Sin robots.txt ni sitemap.xml: faltan bases de SEO",
+      detail: `El sitio no tiene robots.txt ni sitemap.xml, requisitos básicos para que los buscadores descubran e indexen el contenido. Su ausencia sugiere que no se ha trabajado el SEO.`,
       source: "Website Probe",
       confidence: "high",
       icon_hint: "zap",
@@ -416,8 +416,8 @@ async function probeSEOBasics(url: string): Promise<BusinessIntelligenceSignal[]
   } else if (hasSitemap && hasRobots) {
     signals.push({
       type: "expansion_signal",
-      headline: "SEO fundamentals are in place",
-      detail: `Both robots.txt and sitemap.xml are present. This business has at least basic SEO awareness, though the quality and optimization of these files varies significantly.`,
+      headline: "Las bases de SEO están presentes",
+      detail: `Existen robots.txt y sitemap.xml: hay al menos conciencia básica de SEO, aunque la calidad de estos archivos varía mucho.`,
       source: "Website Probe",
       confidence: "medium",
       icon_hint: "trending-up",
@@ -446,8 +446,8 @@ async function probeSecurityPosture(url: string): Promise<BusinessIntelligenceSi
     if (securityScore === 0) {
       signals.push({
         type: "expansion_signal",
-        headline: "No security headers detected on website",
-        detail: `The website is missing all standard security headers (HSTS, CSP, X-Frame-Options). This indicates minimal security investment and potential vulnerability — a clear opportunity for web development services.`,
+        headline: "El sitio no tiene encabezados de seguridad",
+        detail: `Al sitio le faltan los encabezados de seguridad estándar (HSTS, CSP, X-Frame-Options): mínima inversión en seguridad y posible vulnerabilidad. Clara oportunidad de desarrollo web.`,
         source: "Security Headers",
         confidence: "high",
         icon_hint: "zap",
@@ -460,8 +460,8 @@ async function probeSecurityPosture(url: string): Promise<BusinessIntelligenceSi
       if (!finalUrl.startsWith("https://")) {
         signals.push({
           type: "expansion_signal",
-          headline: "Website not using HTTPS",
-          detail: `The site doesn't redirect to HTTPS. Google penalizes non-HTTPS sites in search rankings, and browsers show "Not Secure" warnings. This actively drives away customers.`,
+          headline: "El sitio no usa HTTPS",
+          detail: `El sitio no redirige a HTTPS. Google penaliza estos sitios en sus resultados y los navegadores muestran la advertencia "No seguro", lo que ahuyenta clientes.`,
           source: "SSL Check",
           confidence: "high",
           icon_hint: "zap",
@@ -507,8 +507,8 @@ async function probeCrUX(url: string): Promise<BusinessIntelligenceSignal[]> {
       if (res.status === 404) {
         signals.push({
           type: "expansion_signal",
-          headline: "No real-user web performance data (very low traffic)",
-          detail: `Google's Chrome UX Report has no data for this site — meaning it gets too few visits to generate metrics. This is a strong signal the business has minimal web traffic and needs digital marketing.`,
+          headline: "Sin datos de rendimiento de usuarios reales (tráfico muy bajo)",
+          detail: `Chrome UX Report de Google no tiene datos de este sitio: recibe muy pocas visitas para generar métricas. Señal clara de tráfico web mínimo y necesidad de marketing digital.`,
           source: "Chrome UX Report",
           confidence: "high",
           icon_hint: "zap",
@@ -566,8 +566,8 @@ async function probeCrUX(url: string): Promise<BusinessIntelligenceSignal[]> {
     if (failures >= 2) {
       signals.push({
         type: "expansion_signal",
-        headline: `Failing ${failures} Core Web Vitals (real-user data)`,
-        detail: `Real Chrome users experience: ${failDetails.join(", ")}. These are actual field metrics, not lab tests — this is what customers experience. Google uses these for search ranking.`,
+        headline: `Falla ${failures} Core Web Vitals (datos de usuarios reales)`,
+        detail: `Usuarios reales de Chrome experimentan: ${failDetails.join(", ")}. Son métricas de campo, no de laboratorio: es lo que viven los clientes, y Google las usa para posicionar.`,
         source: "Chrome UX Report",
         confidence: "high",
         icon_hint: "zap",
@@ -575,8 +575,8 @@ async function probeCrUX(url: string): Promise<BusinessIntelligenceSignal[]> {
     } else if (failures === 0 && failDetails.length === 0 && lcp !== undefined) {
       signals.push({
         type: "expansion_signal",
-        headline: "All Core Web Vitals passing (real-user data)",
-        detail: `Real Chrome user metrics show all Core Web Vitals are in the "good" range. This business has invested in website performance — they may be more digitally sophisticated than average.`,
+        headline: "Aprueba todos los Core Web Vitals (datos de usuarios reales)",
+        detail: `Las métricas reales de Chrome muestran todos los Core Web Vitals en rango "bueno": el negocio ha invertido en rendimiento web y podría ser más sofisticado digitalmente que el promedio.`,
         source: "Chrome UX Report",
         confidence: "high",
         icon_hint: "trending-up",
@@ -612,8 +612,8 @@ async function probeCertTransparency(
     if (!Array.isArray(certs) || certs.length === 0) {
       signals.push({
         type: "expansion_signal",
-        headline: "No SSL certificates found for domain",
-        detail: `No certificates have been issued for this domain in public transparency logs. This could mean the site uses a shared/free cert or has minimal HTTPS infrastructure.`,
+        headline: "No se encontraron certificados SSL para el dominio",
+        detail: `No hay certificados emitidos para este dominio en los registros públicos de transparencia. Podría usar un certificado compartido o tener una infraestructura HTTPS mínima.`,
         source: "Certificate Transparency (crt.sh)",
         confidence: "medium",
         icon_hint: "zap",
@@ -660,8 +660,8 @@ async function probeCertTransparency(
     if (subdomains.size >= 5) {
       signals.push({
         type: "expansion_signal",
-        headline: `${subdomains.size} subdomains detected — complex digital infrastructure`,
-        detail: `SSL certificate logs reveal ${subdomains.size} subdomains${interesting.length > 0 ? ` including: ${interesting.slice(0, 4).join(", ")}` : ""}. This suggests a business with significant digital infrastructure investment.`,
+        headline: `${subdomains.size} subdominios detectados: infraestructura digital compleja`,
+        detail: `Los registros de certificados revelan ${subdomains.size} subdominios${interesting.length > 0 ? `, entre ellos: ${interesting.slice(0, 4).join(", ")}` : ""}. Sugiere una inversión importante en infraestructura digital.`,
         source: "Certificate Transparency (crt.sh)",
         confidence: "high",
         icon_hint: "building",
@@ -669,8 +669,8 @@ async function probeCertTransparency(
     } else if (subdomains.size === 0) {
       signals.push({
         type: "expansion_signal",
-        headline: "Single-domain setup — no subdomains",
-        detail: `Only the main domain has SSL certificates. No subdomains like app.*, shop.*, or blog.* were found. This is a simple web presence with no additional digital services running.`,
+        headline: "Un solo dominio, sin subdominios",
+        detail: `Solo el dominio principal tiene certificados SSL; no hay subdominios como app.*, shop.* o blog.*. Es una presencia web simple sin servicios digitales adicionales.`,
         source: "Certificate Transparency (crt.sh)",
         confidence: "medium",
         icon_hint: "briefcase",
@@ -688,8 +688,8 @@ async function probeCertTransparency(
     if (recentCerts.length >= 3) {
       signals.push({
         type: "expansion_signal",
-        headline: `${recentCerts.length} new SSL certificates in last 3 months`,
-        detail: `Active certificate issuance suggests ongoing development work or infrastructure changes. This business is actively investing in their web presence.`,
+        headline: `${recentCerts.length} certificados SSL nuevos en los últimos 3 meses`,
+        detail: `La emisión activa de certificados sugiere desarrollo o cambios de infraestructura en curso: el negocio invierte activamente en su presencia web.`,
         source: "Certificate Transparency (crt.sh)",
         confidence: "medium",
         icon_hint: "trending-up",
@@ -841,8 +841,8 @@ export async function gatherQuickIntel(
     // No website is itself a strong signal
     allSignals.push({
       type: "expansion_signal",
-      headline: "No website detected",
-      detail: `This business appears to have no website. They're missing 70%+ of potential online leads — the strongest possible signal they need digital services.`,
+      headline: "No se detectó sitio web",
+      detail: `El negocio parece no tener sitio web y pierde más del 70% de los prospectos potenciales en línea: la señal más fuerte de que necesita servicios digitales.`,
       source: "Business Profile",
       confidence: "high",
       icon_hint: "zap",
@@ -859,8 +859,8 @@ export async function gatherQuickIntel(
     if (params.rating < 3.5) {
       allSignals.push({
         type: "rapid_growth",
-        headline: `Low Google rating: ${params.rating} stars`,
-        detail: `A ${params.rating}-star rating is suppressing this business's visibility in Google Maps and driving customers to competitors. Reputation management is urgently needed.`,
+        headline: `Calificación baja en Google: ${params.rating} estrellas`,
+        detail: `Una calificación de ${params.rating} estrellas reduce la visibilidad en Google Maps y empuja a los clientes hacia la competencia. Urge gestionar la reputación.`,
         source: "Google Reviews",
         confidence: "high",
         icon_hint: "trending-up",
@@ -869,8 +869,8 @@ export async function gatherQuickIntel(
     if (params.reviewCount < 10) {
       allSignals.push({
         type: "rapid_growth",
-        headline: `Only ${params.reviewCount} Google reviews`,
-        detail: `With just ${params.reviewCount} reviews, this business lacks the social proof modern consumers expect. Review generation is a quick win.`,
+        headline: `Solo ${params.reviewCount} reseñas en Google`,
+        detail: `Con apenas ${params.reviewCount} reseñas, al negocio le falta la prueba social que esperan los consumidores. Generar reseñas es una victoria rápida.`,
         source: "Google Reviews",
         confidence: "high",
         icon_hint: "trending-up",
@@ -879,8 +879,8 @@ export async function gatherQuickIntel(
     if (params.rating >= 4.5 && params.reviewCount >= 50) {
       allSignals.push({
         type: "rapid_growth",
-        headline: `Strong reputation: ${params.rating}★ with ${params.reviewCount} reviews`,
-        detail: `This business has excellent social proof but may be under-leveraging it digitally. Great reputation + weak website = highest ROI opportunity.`,
+        headline: `Buena reputación: ${params.rating}★ con ${params.reviewCount} reseñas`,
+        detail: `El negocio tiene excelente prueba social pero quizá no la aprovecha digitalmente. Gran reputación + sitio débil = la oportunidad de mayor retorno.`,
         source: "Google Reviews",
         confidence: "medium",
         icon_hint: "trending-up",
