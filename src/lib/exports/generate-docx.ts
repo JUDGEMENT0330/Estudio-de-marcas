@@ -23,21 +23,27 @@ import {
 import type { Report, WhiteLabelConfig } from "@/lib/db/types";
 import { BRAND_COLORS, formatMonthYearEs } from "@/lib/brand";
 import { buildDocContent, LEVEL_HEX, LEVEL_SOFT_HEX, type DocContent } from "./doc-content";
-import { fitLogo, resolveDocBrand, type DocBrand } from "./doc-brand";
+import { fitImage, fitLogo, resolveDocBrand, type DocBrand } from "./doc-brand";
+import type { DocImage } from "./doc-image";
 
 /**
  * Informe Word con la plantilla de Cyber Valtorix:
  *   - Encabezado: escudo + "CYBER VALTORIX SAS. DE C.V." (Times New Roman)
- *   - Pie: línea azul, correo · ícono · teléfono (Times New Roman)
+ *   - Pie: banda tecnológica (pista de circuito) + correo · página · teléfono
  *   - Cuerpo Arial 11 · H1 NAVY 14 · H2 BLUE 12 · H3 TEAL 11
  *   - Portada con título NAVY, subtítulo GOLD y ficha de entrega
- *   - Cierre "Atentamente" con firmante
+ *   - Cierre "Atentamente" con firma, nombre y cargo centrados
  */
 
 const PAGE_W = 12240; // Carta
 const CONTENT_W = 9360; // 1" márgenes
 const HF_FONT = "Times New Roman";
 const BODY_FONT = "Arial";
+const TECH_FONT = "Consolas";
+
+function image(img: DocImage, transformation: { width: number; height: number }): ImageRun {
+  return new ImageRun({ type: img.type, data: img.data, transformation });
+}
 
 const none = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
 const noBorders = { top: none, bottom: none, left: none, right: none, insideHorizontal: none, insideVertical: none };
@@ -131,7 +137,7 @@ function makeHelpers(brand: DocBrand) {
 function buildHeader(brand: DocBrand): Header {
   const children: (TextRun | ImageRun)[] = [];
   if (brand.logo) {
-    children.push(new ImageRun({ type: "png", data: brand.logo, transformation: fitLogo(brand, 37, 160) }));
+    children.push(image(brand.logo, fitLogo(brand, 37, 160)));
   }
   children.push(new TextRun({ text: `\t${brand.company}`, font: HF_FONT, size: 22, bold: true, color: "000000" }));
   return new Header({
@@ -146,13 +152,17 @@ function buildHeader(brand: DocBrand): Header {
 }
 
 function buildFooter(brand: DocBrand): Footer {
-  const middle: (TextRun | ImageRun)[] = brand.footerIcon
-    ? [new TextRun({ text: "\t", font: HF_FONT }), new ImageRun({ type: "png", data: brand.footerIcon, transformation: { width: 26, height: 16 } })]
-    : [new TextRun({ text: "\t·", font: HF_FONT, color: brand.blue })];
+  const muted = "6E7B8F";
+  // 624 px = ancho útil de la página (6.5" a 96 ppp).
+  const band = fitImage(brand.footerBand, 40, 624);
   return new Footer({
     children: [
       new Paragraph({
-        border: { top: { style: BorderStyle.SINGLE, size: 6, color: BRAND_COLORS.footerLine, space: 8 } },
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 20 },
+        children: [image(brand.footerBand, band)],
+      }),
+      new Paragraph({
         tabStops: [
           { type: TabStopType.CENTER, position: CONTENT_W / 2 },
           { type: TabStopType.RIGHT, position: CONTENT_W },
@@ -160,17 +170,14 @@ function buildFooter(brand: DocBrand): Footer {
         children: [
           new ExternalHyperlink({
             link: `mailto:${brand.email}`,
-            children: [new TextRun({ text: brand.email, font: HF_FONT, size: 20, color: "0563C1", underline: {} })],
+            children: [new TextRun({ text: brand.email, font: TECH_FONT, size: 16, color: brand.primary })],
           }),
-          ...middle,
-          new TextRun({ text: `\t${brand.phone}`, font: HF_FONT, size: 20, color: "000000" }),
-        ],
-      }),
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 60 },
-        children: [
-          new TextRun({ children: ["Página ", PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES], font: HF_FONT, size: 16, color: "8A8A8E" }),
+          new TextRun({ text: "\t", font: TECH_FONT }),
+          new TextRun({ text: "PÁG ", font: TECH_FONT, size: 15, bold: true, color: brand.accent, characterSpacing: 30 }),
+          new TextRun({ children: [PageNumber.CURRENT], font: TECH_FONT, size: 16, bold: true, color: brand.primary }),
+          new TextRun({ text: " / ", font: TECH_FONT, size: 16, color: muted }),
+          new TextRun({ children: [PageNumber.TOTAL_PAGES], font: TECH_FONT, size: 16, color: muted }),
+          new TextRun({ text: `\t${brand.phone}`, font: TECH_FONT, size: 16, color: brand.primary }),
         ],
       }),
     ],
@@ -192,7 +199,7 @@ function coverPage(c: DocContent, brand: DocBrand, H: ReturnType<typeof makeHelp
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { after: 360 },
-        children: [new ImageRun({ type: "png", data: brand.logo, transformation: fitLogo(brand, 146, 360) })],
+        children: [image(brand.logo, fitLogo(brand, 146, 360))],
       }),
     );
   }
@@ -420,19 +427,47 @@ export async function generateReportDOCX(report: Report, branding?: WhiteLabelCo
     for (const n of c.caveats) body.push(H.bullet(n, "8A8A8E"));
   }
 
-  // Cierre
+  // Anexo: aportes del agente IA aprobados por el usuario
+  if (c.agentInsights.length) {
+    body.push(H.pageBreak(), H.h1("7. Análisis complementario"));
+    body.push(
+      H.para("Aportes elaborados con asistencia de inteligencia artificial a partir de los datos de esta auditoría y de fuentes públicas citadas; revisados y aprobados antes de incluirse.", { size: 19, italics: true, color: "6E6E73" }),
+    );
+    for (const insight of c.agentInsights) {
+      body.push(H.h2(insight.title));
+      for (const block of insight.blocks) {
+        if (block.kind === "h") body.push(H.h3(block.text));
+        else if (block.kind === "li") body.push(H.bullet(block.text));
+        else body.push(H.para(block.text));
+      }
+      if (insight.sources.length) {
+        body.push(H.para("Fuentes consultadas:", { size: 18, bold: true, color: "6E6E73" }));
+        for (const src of insight.sources) body.push(H.bullet(src, "8A8A8E"));
+      }
+    }
+  }
+
+  // Cierre: firma, nombre y cargo centrados
+  const centered = (children: (TextRun | ImageRun)[], after = 0) =>
+    new Paragraph({ alignment: AlignmentType.CENTER, keepNext: true, keepLines: true, spacing: { after }, children });
   body.push(H.divider());
-  body.push(H.para("Atentamente:", { bold: true }));
+  body.push(centered([run("Atentamente,", { bold: true })], 120));
   if (brand.signature) {
-    body.push(new Paragraph({ children: [new ImageRun({ type: "png", data: brand.signature, transformation: { width: 240, height: 115 } })] }));
+    body.push(centered([image(brand.signature, fitImage(brand.signature, 115, 260))]));
   } else {
-    body.push(new Paragraph({ spacing: { before: 600 }, children: [] }));
+    body.push(new Paragraph({ keepNext: true, spacing: { before: 700 }, children: [] }));
   }
   body.push(
-    new Paragraph({ children: [run(brand.signer, { bold: true, color: brand.primary })] }),
-    new Paragraph({ children: [run(brand.signerRole, { bold: true, color: brand.primary })] }),
-    new Paragraph({ children: [run(brand.company, { color: brand.primary })] }),
-    new Paragraph({ children: [run(brand.phone.replace(/\s+/, "-"), { color: brand.primary })] }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      keepNext: true,
+      indent: { left: 2600, right: 2600 },
+      border: { top: { style: BorderStyle.SINGLE, size: 6, color: brand.primary, space: 4 } },
+      children: [run(brand.signer, { bold: true, color: brand.primary })],
+    }),
+    centered([run(brand.signerRole, { bold: true, color: brand.accent })]),
+    centered([run(brand.company, { color: brand.primary })]),
+    centered([run(`${brand.email}  ·  ${brand.phone}`, { size: 19, color: "6E6E73" })]),
   );
 
   const doc = new Document({

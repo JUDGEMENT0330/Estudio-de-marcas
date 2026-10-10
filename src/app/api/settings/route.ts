@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireRouteUser } from "@/lib/auth/route";
+import { loadDocImage } from "@/lib/exports/doc-image";
 
 export const dynamic = "force-dynamic";
 
+// Imágenes subidas desde el navegador (ya convertidas a PNG), máx. ~4 MB.
+const imageDataUri = z.string().max(6_000_000).regex(/^data:image\/(png|jpe?g);base64,/i);
+
 const settingsUpdateSchema = z.object({
   company_name: z.string().optional(),
-  logo_url: z.string().url().optional().or(z.literal("")),
+  logo_url: z.union([z.string().url().max(2000), imageDataUri, z.literal("")]).optional(),
+  signer_name: z.string().max(160).optional(),
+  signer_role: z.string().max(120).optional(),
+  signature_data: z.union([imageDataUri, z.literal("")]).optional(),
   primary_color: z.string().optional(),
   secondary_color: z.string().optional(),
   contact_email: z.string().email().optional().or(z.literal("")),
@@ -63,6 +70,13 @@ export async function PUT(request: NextRequest) {
       },
     });
 
+    // Verifica que el logo realmente se pueda incrustar en los documentos.
+    const logo = parsed.data.logo_url?.trim();
+    const warning =
+      logo && !(await loadDocImage(logo))
+        ? "Se guardó, pero el logo de esa URL no se puede usar en los documentos (no es una imagen accesible o su formato no es compatible). Usa el botón «Subir» para cargar el archivo; mientras tanto se usará el escudo por defecto."
+        : undefined;
+
     return NextResponse.json({
       id: updated?.id,
       email: updated?.email,
@@ -70,6 +84,7 @@ export async function PUT(request: NextRequest) {
       white_label_config: updated?.white_label_config || {},
       widget_api_key: updated?.widget_api_key,
       message: "Configuración actualizada",
+      warning,
     });
   } catch (error) {
     console.error("Settings PUT error:", error);

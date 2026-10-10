@@ -53,6 +53,59 @@ export interface DocRecommendation {
   module?: string;
 }
 
+export interface DocInsightBlock {
+  kind: "h" | "p" | "li";
+  text: string;
+}
+
+export interface DocInsight {
+  title: string;
+  blocks: DocInsightBlock[];
+  sources: string[];
+}
+
+/**
+ * Convierte el texto del agente (formato ligero tipo Markdown) en bloques
+ * simples que los cuatro formatos saben dibujar.
+ */
+export function parseInsightContent(content: string): DocInsightBlock[] {
+  const clean = (text: string) =>
+    text
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/__(.+?)__/g, "$1")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, "$1 ($2)")
+      .trim();
+  const blocks: DocInsightBlock[] = [];
+  let paragraph: string[] = [];
+  const flush = () => {
+    if (paragraph.length) blocks.push({ kind: "p", text: clean(paragraph.join(" ")) });
+    paragraph = [];
+  };
+  for (const raw of content.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) {
+      flush();
+      continue;
+    }
+    const heading = line.match(/^#{1,6}\s+(.+)$/);
+    const item = line.match(/^(?:[-*•]|\d+[.)])\s+(.+)$/);
+    if (heading) {
+      flush();
+      blocks.push({ kind: "h", text: clean(heading[1]) });
+    } else if (item) {
+      flush();
+      blocks.push({ kind: "li", text: clean(item[1]) });
+    } else if (/^\|?\s*:?-{3,}/.test(line)) {
+      continue;
+    } else {
+      paragraph.push(line.replace(/^\|\s*|\s*\|$/g, "").replace(/\s*\|\s*/g, " · "));
+    }
+  }
+  flush();
+  return blocks.filter((block) => block.text);
+}
+
 export interface DocContent {
   businessName: string;
   location: string;
@@ -84,6 +137,8 @@ export interface DocContent {
   caveats: string[];
   showRevenueDollars: boolean;
   hasAI: boolean;
+  /** Aportes del agente IA aprobados por el usuario. */
+  agentInsights: DocInsight[];
 }
 
 const MODULE_LABELS: Record<string, string> = {
@@ -362,6 +417,11 @@ export function buildDocContent(report: Report): DocContent {
     caveats: filterClientFacingReportItems(ai?.data_quality_assessment?.caveats ?? []).map(t),
     showRevenueDollars: showDollars,
     hasAI: Boolean(ai),
+    agentInsights: (result.agent_insights ?? []).map((insight) => ({
+      title: insight.title,
+      blocks: parseInsightContent(insight.content),
+      sources: insight.sources ?? [],
+    })),
   };
 }
 

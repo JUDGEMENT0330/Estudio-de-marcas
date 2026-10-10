@@ -27,6 +27,26 @@ export interface WhiteLabelConfig {
   secondary_color?: string;
   contact_email?: string;
   contact_phone?: string;
+  /** Nombre del firmante que cierra los informes. */
+  signer_name?: string;
+  /** Cargo del firmante. */
+  signer_role?: string;
+  /** Firma/sello como data URI (se guarda en la base de datos, nunca en el repositorio). */
+  signature_data?: string;
+}
+
+/** Aporte del agente IA aprobado por el usuario para incluirlo en el informe. */
+export interface AgentInsight {
+  id: string;
+  /** Tarea que lo originó (resumen, plan90, competencia…, o "custom"). */
+  task: string;
+  title: string;
+  /** Texto con formato ligero: "## Subtítulo", "- viñeta" y párrafos. */
+  content: string;
+  /** URLs consultadas por el agente (citas). */
+  sources: string[];
+  provider?: string;
+  created_at: string;
 }
 
 export interface Report {
@@ -469,6 +489,8 @@ export interface EvidenceReport {
 
 export interface AuditResult {
   executive_summary: ExecutiveSummaryData | string; // Support legacy string summaries
+  /** Análisis complementarios del agente IA, aprobados desde el navegador. */
+  agent_insights?: AgentInsight[];
   gbp_health?: GBPHealthResult;
   review_sentiment?: ReviewSentimentResult;
   website_performance?: WebsitePerformanceResult;

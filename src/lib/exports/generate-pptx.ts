@@ -2,12 +2,14 @@ import PptxGenJS from "pptxgenjs";
 import type { Report, WhiteLabelConfig } from "@/lib/db/types";
 import { BRAND_COLORS } from "@/lib/brand";
 import { buildDocContent, LEVEL_HEX, LEVEL_SOFT_HEX, type DocContent } from "./doc-content";
-import { fitLogo, resolveDocBrand, type DocBrand } from "./doc-brand";
+import { fitImage, fitLogo, resolveDocBrand, type DocBrand } from "./doc-brand";
+import { imageDataUri, type DocImage } from "./doc-image";
 
 /**
  * Presentación con estética tipo Keynote (fondos limpios, tipografía grande,
  * mucho aire) y la identidad Cyber Valtorix: encabezado con escudo y razón
- * social, pie con correo · ícono · teléfono, paleta NAVY/GOLD/BLUE.
+ * social, pie tecnológico (banda de circuito + correo · número · teléfono),
+ * paleta NAVY/GOLD/BLUE y cierre con firma, nombre y cargo centrados.
  */
 
 const W = 10;
@@ -19,7 +21,7 @@ const SUB = "6E6E73";
 const BG = "FFFFFF";
 const SOFT = BRAND_COLORS.appleBg;
 
-const png = (data: Buffer | null) => (data ? `image/png;base64,${data.toString("base64")}` : null);
+const png = (image: DocImage | null) => imageDataUri(image, "");
 
 function truncate(text: string, max: number): string {
   if (!text) return "";
@@ -36,12 +38,18 @@ function chrome(pres: PptxGenJS, slide: PptxGenJS.Slide, brand: DocBrand, n: num
     x: 4.6, y: 0.22, w: 5.0, h: 0.32, align: "right", fontFace: "Times New Roman",
     fontSize: 10, bold: true, color: "000000",
   });
-  slide.addShape(pres.ShapeType.line, { x: 0.4, y: 5.12, w: 9.2, h: 0, line: { color: BRAND_COLORS.footerLine, width: 0.75 } });
-  slide.addText(brand.email, { x: 0.4, y: 5.17, w: 3.6, h: 0.3, fontFace: "Times New Roman", fontSize: 9, color: "0563C1" });
-  const icon = png(brand.footerIcon);
-  if (icon) slide.addImage({ data: icon, x: 4.86, y: 5.2, w: 0.28, h: 0.18 });
-  slide.addText(`${brand.phone}   ·   ${n}`, {
-    x: 6.0, y: 5.17, w: 3.6, h: 0.3, align: "right", fontFace: "Times New Roman", fontSize: 9, color: "000000",
+  const band = png(brand.footerBand);
+  if (band) slide.addImage({ data: band, x: 0.4, y: 5.02, w: 9.2, h: 9.2 * (brand.footerBand.height / brand.footerBand.width) });
+  slide.addText(brand.email, { x: 0.4, y: 5.28, w: 3.6, h: 0.25, fontFace: "Consolas", fontSize: 8, color: brand.primary });
+  slide.addText(
+    [
+      { text: "PÁG ", options: { color: brand.accent, bold: true } },
+      { text: String(n).padStart(2, "0"), options: { color: brand.primary, bold: true } },
+    ],
+    { x: 4.2, y: 5.28, w: 1.6, h: 0.25, align: "center", fontFace: "Consolas", fontSize: 8, charSpacing: 1 },
+  );
+  slide.addText(brand.phone, {
+    x: 6.0, y: 5.28, w: 3.6, h: 0.25, align: "right", fontFace: "Consolas", fontSize: 8, color: brand.primary,
   });
   void total;
 }
@@ -239,22 +247,52 @@ export async function generateReportPPTX(report: Report, branding?: WhiteLabelCo
     });
   }
 
+  // ── Análisis complementario (agente IA aprobado) ─────────
+  for (const insight of c.agentInsights) {
+    const s = pres.addSlide();
+    s.background = { color: BG };
+    chrome(pres, s, brand, ++n, total);
+    title(s, brand, "Análisis complementario · IA", insight.title);
+    const lines = insight.blocks.slice(0, 12).map((block) => ({
+      text: truncate(block.text, 220),
+      options: {
+        bullet: block.kind === "li" ? { indent: 14 } : undefined,
+        bold: block.kind === "h",
+        color: block.kind === "h" ? brand.blue : "3A3A3C",
+        fontSize: block.kind === "h" ? 13 : 11.5,
+        breakLine: true,
+        paraSpaceAfter: 5,
+      },
+    }));
+    s.addText(lines, { x: 0.6, y: 1.7, w: 8.8, h: 3.2, fontFace: FALLBACK_FONT, valign: "top", fit: "shrink" });
+  }
+
   // ── Cierre ───────────────────────────────────────────────
   {
     const s = pres.addSlide();
     s.background = { color: brand.primary };
+    const signature = png(brand.signature);
+    // Con firma, todo sube un poco para dejar espacio al bloque firmante centrado.
+    const top = signature ? -0.35 : 0;
     const logo = png(brand.logo);
     if (logo) {
-      const { width: w, height: h } = fitLogo(brand, 1.07, 3.5);
-      s.addImage({ data: logo, x: 5 - w / 2, y: 0.8 + (1.07 - h) / 2, w, h });
+      const { width: w, height: h } = fitLogo(brand, signature ? 0.85 : 1.07, 3.5);
+      s.addImage({ data: logo, x: 5 - w / 2, y: 0.8 + top + ((signature ? 0.85 : 1.07) - h) / 2, w, h });
     }
-    s.addText("Gracias", { x: 0.5, y: 2.05, w: 9, h: 0.8, align: "center", fontFace: FONT, fontSize: 40, bold: true, color: "FFFFFF" });
+    s.addText("Gracias", { x: 0.5, y: 2.05 + top - (signature ? 0.2 : 0), w: 9, h: 0.8, align: "center", fontFace: FONT, fontSize: signature ? 34 : 40, bold: true, color: "FFFFFF" });
     if (c.bottomLine) {
-      s.addText(`“${truncate(c.bottomLine, 200)}”`, { x: 1.2, y: 2.85, w: 7.6, h: 0.75, align: "center", fontFace: FONT, fontSize: 14, italic: true, color: "D5E8F0", fit: "shrink" });
+      s.addText(`“${truncate(c.bottomLine, 200)}”`, { x: 1.2, y: 2.85 + top - (signature ? 0.25 : 0), w: 7.6, h: signature ? 0.6 : 0.75, align: "center", fontFace: FONT, fontSize: signature ? 12 : 14, italic: true, color: "D5E8F0", fit: "shrink" });
     }
-    s.addText(brand.signer, { x: 0.5, y: 3.75, w: 9, h: 0.35, align: "center", fontFace: FONT, fontSize: 13, bold: true, color: brand.accent });
-    s.addText(`${brand.signerRole} · ${brand.company}`, { x: 0.5, y: 4.08, w: 9, h: 0.3, align: "center", fontFace: FONT, fontSize: 11, color: "FFFFFF" });
-    s.addText(`${brand.email}   ·   ${brand.phone}`, { x: 0.5, y: 4.45, w: 9, h: 0.3, align: "center", fontFace: FONT, fontSize: 11, color: "B8C7DD" });
+    if (signature) {
+      // Placa blanca para que la firma y el sello se lean sobre el fondo oscuro.
+      const size = fitImage(brand.signature, 0.66, 2.2);
+      s.addShape(pres.ShapeType.roundRect, { x: 5 - (size.width + 0.4) / 2, y: 2.95, w: size.width + 0.4, h: 0.78, fill: { color: "FFFFFF" }, line: { color: "FFFFFF", width: 0 }, rectRadius: 0.08 });
+      s.addImage({ data: signature, x: 5 - size.width / 2, y: 3.01 + (0.66 - size.height) / 2, w: size.width, h: size.height });
+    }
+    const y0 = signature ? 3.85 : 3.75;
+    s.addText(brand.signer, { x: 0.5, y: y0, w: 9, h: 0.3, align: "center", fontFace: FONT, fontSize: 13, bold: true, color: brand.accent });
+    s.addText(brand.signerRole, { x: 0.5, y: y0 + 0.3, w: 9, h: 0.26, align: "center", fontFace: FONT, fontSize: 11, bold: true, color: "FFFFFF", charSpacing: 2 });
+    s.addText(`${brand.company}   ·   ${brand.email}   ·   ${brand.phone}`, { x: 0.5, y: y0 + 0.6, w: 9, h: 0.26, align: "center", fontFace: FONT, fontSize: 10, color: "B8C7DD" });
   }
 
   const data = await pres.write({ outputType: "nodebuffer" });

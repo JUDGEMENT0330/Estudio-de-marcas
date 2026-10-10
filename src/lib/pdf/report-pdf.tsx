@@ -5,13 +5,15 @@ import { h, Fragment } from "./pdf-react";
 import { Document, Image, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { BRAND_COLORS, formatMonthYearEs } from "@/lib/brand";
 import { LEVEL_HEX, LEVEL_SOFT_HEX, type DocContent } from "@/lib/exports/doc-content";
-import { fitLogo, type DocBrand } from "@/lib/exports/doc-brand";
+import { fitImage, fitLogo, type DocBrand } from "@/lib/exports/doc-brand";
+import { imageDataUri } from "@/lib/exports/doc-image";
 
 /**
  * Informe PDF con estética limpia tipo Apple (mucho aire, jerarquía por peso
  * y tamaño, superficies suaves con esquinas redondeadas) sobre la plantilla
- * de Cyber Valtorix: encabezado con escudo + razón social, pie con correo,
- * ícono y teléfono, portada y cierre con firmante.
+ * de Cyber Valtorix: encabezado con escudo + razón social, pie tecnológico
+ * (banda de circuito + correo · página · teléfono), portada y cierre con
+ * firma, nombre y cargo centrados.
  */
 
 // Referencia explícita: evita que el compilador elimine el import usado solo por la pragma JSX.
@@ -35,7 +37,6 @@ function safe(text: string): string {
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "");
 }
 
-const png = (data: Buffer | null) => (data ? `data:image/png;base64,${data.toString("base64")}` : null);
 
 function makeStyles(brand: DocBrand) {
   const navy = hex(brand.primary);
@@ -48,15 +49,21 @@ function makeStyles(brand: DocBrand) {
     blue,
     teal,
     s: StyleSheet.create({
-      page: { paddingTop: 78, paddingBottom: 70, paddingHorizontal: 54, fontFamily: "Helvetica", fontSize: 10.5, color: BODY, lineHeight: 1.45 },
+      // Sin lineHeight en la página: react-pdf no dibuja el texto dinámico
+      // (número de página) si lo hereda. El interlineado va en `body`, que
+      // repite fontSize para que la proporción se calcule igual que antes.
+      page: { paddingTop: 78, paddingBottom: 70, paddingHorizontal: 54, fontFamily: "Helvetica", fontSize: 10.5, color: BODY },
+      body: { lineHeight: 1.45, fontSize: 10.5 },
       header: { position: "absolute", top: 26, left: 54, right: 54, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
       headerLogo: { width: 28, height: 27 },
       headerText: { fontFamily: "Times-Bold", fontSize: 11, color: "#000000" },
-      footer: { position: "absolute", bottom: 26, left: 54, right: 54, borderTopWidth: 0.75, borderTopColor: hex(BRAND_COLORS.footerLine), paddingTop: 7, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-      footerText: { fontFamily: "Times-Roman", fontSize: 9, color: "#000000" },
-      footerLink: { fontFamily: "Times-Roman", fontSize: 9, color: "#0563C1", textDecoration: "underline" },
-      footerIcon: { width: 22, height: 14 },
-      pageNum: { position: "absolute", bottom: 12, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: SUB },
+      footer: { position: "absolute", bottom: 18, left: 54, right: 54, height: 32 },
+      footerBand: { width: 504, height: 16.8 },
+      footerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 3 },
+      footerText: { fontFamily: "Courier", fontSize: 8, color: navy },
+      footerLink: { fontFamily: "Courier", fontSize: 8, color: navy, textDecoration: "none" },
+      pageNum: { position: "absolute", bottom: 18.5, left: 0, right: 0, textAlign: "center", fontFamily: "Courier-Bold", fontSize: 8, color: navy, letterSpacing: 0.6 },
+      coverText: { fontFamily: "Times-Roman", fontSize: 9, color: "#000000" },
 
       eyebrow: { fontFamily: "Helvetica-Bold", fontSize: 8.5, color: gold, letterSpacing: 1.4, marginBottom: 4 },
       h1: { fontFamily: "Helvetica-Bold", fontSize: 20, color: navy, marginBottom: 10, letterSpacing: -0.3 , lineHeight: 1.15 },
@@ -92,8 +99,8 @@ function makeStyles(brand: DocBrand) {
 type Styles = ReturnType<typeof makeStyles>;
 
 function Chrome({ brand, st }: { brand: DocBrand; st: Styles }) {
-  const logo = png(brand.logo);
-  const icon = png(brand.footerIcon);
+  const logo = imageDataUri(brand.logo);
+  const band = imageDataUri(brand.footerBand);
   return (
     <>
       <View style={st.s.header} fixed>
@@ -101,11 +108,18 @@ function Chrome({ brand, st }: { brand: DocBrand; st: Styles }) {
         <Text style={st.s.headerText}>{brand.company}</Text>
       </View>
       <View style={st.s.footer} fixed>
-        <Link src={`mailto:${brand.email}`} style={st.s.footerLink}>{brand.email}</Link>
-        {icon ? <Image src={icon} style={st.s.footerIcon} /> : <Text style={st.s.footerText}>·</Text>}
-        <Text style={st.s.footerText}>{brand.phone}</Text>
+        {band && <Image src={band} style={st.s.footerBand} />}
+        <View style={st.s.footerRow}>
+          <Link src={`mailto:${brand.email}`} style={st.s.footerLink}>{brand.email}</Link>
+          <Text style={st.s.footerText}>{brand.phone}</Text>
+        </View>
       </View>
-      <Text style={st.s.pageNum} fixed render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} />
+      {/* react-pdf solo resuelve `render` en hijos directos de la página. */}
+      <Text
+        style={st.s.pageNum}
+        fixed
+        render={({ pageNumber, totalPages }) => `PÁG ${String(pageNumber).padStart(2, "0")} / ${String(totalPages).padStart(2, "0")}`}
+      />
     </>
   );
 }
@@ -139,13 +153,13 @@ function Table({ headers, rows, widths, st, highlightFirst }: { headers: string[
 }
 
 function Cover({ c, brand, st }: { c: DocContent; brand: DocBrand; st: Styles }) {
-  const logo = png(brand.logo);
+  const logo = imageDataUri(brand.logo);
   const color = hex(LEVEL_HEX[c.level]);
   return (
     <Page size="LETTER" style={[st.s.page, { paddingTop: 54 }]}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Text style={st.s.headerText}>{brand.company}</Text>
-        <Text style={st.s.footerText}>{brand.email}  ·  {brand.phone}</Text>
+        <Text style={st.s.coverText}>{brand.email}  ·  {brand.phone}</Text>
       </View>
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         {logo && <Image src={logo} style={{ ...fitLogo(brand, 117, 300), marginBottom: 30 }} />}
@@ -159,7 +173,7 @@ function Cover({ c, brand, st }: { c: DocContent; brand: DocBrand; st: Styles })
         </View>
         <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 11, color, marginTop: 10 }}>{c.grade}  ·  {c.scoreTier}</Text>
       </View>
-      <View style={{ borderTopWidth: 1.5, borderTopColor: st.navy, paddingTop: 12 }}>
+      <View style={[st.s.body, { borderTopWidth: 1.5, borderTopColor: st.navy, paddingTop: 12 }]}>
         {[
           ["Negocio analizado", c.businessName],
           ["Tipo de entregable", "Auditoría de presencia digital e inteligencia de marca"],
@@ -188,7 +202,18 @@ function deepSafe<T>(value: T): T {
 export default function ReportPDF({ content, brand }: { content: DocContent; brand: DocBrand }) {
   const c = deepSafe(content);
   const st = makeStyles(brand);
-  const signature = png(brand.signature);
+  const signature = imageDataUri(brand.signature);
+  const closing = (
+    <View style={{ marginTop: 26, borderTopWidth: 1.5, borderTopColor: st.navy, paddingTop: 14, alignItems: "center" }} wrap={false}>
+      <Text style={{ fontFamily: "Helvetica-Bold", marginBottom: 8, textAlign: "center" }}>Atentamente,</Text>
+      {signature ? <Image src={signature} style={{ ...fitImage(brand.signature, 82, 190), marginBottom: 2 }} /> : <View style={{ height: 40 }} />}
+      <View style={{ borderTopWidth: 0.75, borderTopColor: st.navy, width: 220, marginBottom: 4 }} />
+      <Text style={{ fontFamily: "Helvetica-Bold", color: st.navy, textAlign: "center" }}>{brand.signer}</Text>
+      <Text style={{ fontFamily: "Helvetica-Bold", color: st.gold, textAlign: "center", letterSpacing: 0.6 }}>{brand.signerRole}</Text>
+      <Text style={{ color: st.navy, textAlign: "center" }}>{brand.company}</Text>
+      <Text style={{ color: SUB, fontSize: 9, textAlign: "center" }}>{brand.email}  ·  {brand.phone}</Text>
+    </View>
+  );
 
   return (
     <Document title={`Auditoría digital — ${c.businessName}`} author={brand.company} creator={brand.company} producer={brand.company} language="es">
@@ -197,217 +222,256 @@ export default function ReportPDF({ content, brand }: { content: DocContent; bra
       {/* Resumen ejecutivo */}
       <Page size="LETTER" style={st.s.page}>
         <Chrome brand={brand} st={st} />
-        <Text style={st.s.eyebrow}>1 · RESUMEN EJECUTIVO</Text>
-        <Text style={st.s.h1}>{c.verdictHeadline}</Text>
-        {c.summaryParagraphs.slice(0, 1).map((p, i) => (
-          <Text key={i} style={st.s.lead}>{p}</Text>
-        ))}
-        {c.keyStats.length > 0 && (
-          <View style={st.s.statRow}>
-            {c.keyStats.map((s, i) => (
-              <View
-                key={i}
-                style={[
-                  st.s.stat,
-                  { backgroundColor: s.sentiment === "positive" ? "#E3F4EA" : s.sentiment === "negative" ? "#FCE6E4" : SOFT },
-                  i === c.keyStats.length - 1 ? { marginRight: 0 } : {},
-                ]}
-              >
-                <Text style={[st.s.statValue, { color: s.sentiment === "positive" ? "#1E8E5A" : s.sentiment === "negative" ? "#C0392B" : st.navy }]}>{s.value}</Text>
-                <Text style={st.s.statLabel}>{s.label.toUpperCase()}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-        {c.summaryParagraphs.slice(1).map((p, i) => (
-          <Bullet key={i} st={st}>{p}</Bullet>
-        ))}
+        <View style={st.s.body}>
+          <Text style={st.s.eyebrow}>1 · RESUMEN EJECUTIVO</Text>
+          <Text style={st.s.h1}>{c.verdictHeadline}</Text>
+          {c.summaryParagraphs.slice(0, 1).map((p, i) => (
+            <Text key={i} style={st.s.lead}>{p}</Text>
+          ))}
+          {c.keyStats.length > 0 && (
+            <View style={st.s.statRow}>
+              {c.keyStats.map((s, i) => (
+                <View
+                  key={i}
+                  style={[
+                    st.s.stat,
+                    { backgroundColor: s.sentiment === "positive" ? "#E3F4EA" : s.sentiment === "negative" ? "#FCE6E4" : SOFT },
+                    i === c.keyStats.length - 1 ? { marginRight: 0 } : {},
+                  ]}
+                >
+                  <Text style={[st.s.statValue, { color: s.sentiment === "positive" ? "#1E8E5A" : s.sentiment === "negative" ? "#C0392B" : st.navy }]}>{s.value}</Text>
+                  <Text style={st.s.statLabel}>{s.label.toUpperCase()}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          {c.summaryParagraphs.slice(1).map((p, i) => (
+            <Bullet key={i} st={st}>{p}</Bullet>
+          ))}
 
-        {(c.strength || c.gap) && (
-          <View style={[st.s.row, { marginTop: 10 }]}>
-            {c.strength && (
-              <View style={[st.s.card, { flex: 1, marginRight: c.gap ? 8 : 0, backgroundColor: "#E3F4EA" }]} wrap={false}>
-                <Text style={[st.s.eyebrow, { color: "#1E8E5A" }]}>PRINCIPAL FORTALEZA</Text>
-                <Text style={{ fontFamily: "Helvetica-Bold", color: INK, marginBottom: 3 }}>{c.strength.module}{c.strength.headline ? ` — ${c.strength.headline}` : ""}</Text>
-                <Text style={{ fontSize: 9.5 }}>{c.strength.detail}</Text>
-              </View>
-            )}
-            {c.gap && (
-              <View style={[st.s.card, { flex: 1, backgroundColor: "#FCE6E4" }]} wrap={false}>
-                <Text style={[st.s.eyebrow, { color: "#C0392B" }]}>BRECHA CRÍTICA</Text>
-                <Text style={{ fontFamily: "Helvetica-Bold", color: INK, marginBottom: 3 }}>{c.gap.module}{c.gap.headline ? ` — ${c.gap.headline}` : ""}</Text>
-                <Text style={{ fontSize: 9.5 }}>{c.gap.detail}</Text>
-              </View>
-            )}
-          </View>
-        )}
+          {(c.strength || c.gap) && (
+            <View style={[st.s.row, { marginTop: 10 }]}>
+              {c.strength && (
+                <View style={[st.s.card, { flex: 1, marginRight: c.gap ? 8 : 0, backgroundColor: "#E3F4EA" }]} wrap={false}>
+                  <Text style={[st.s.eyebrow, { color: "#1E8E5A" }]}>PRINCIPAL FORTALEZA</Text>
+                  <Text style={{ fontFamily: "Helvetica-Bold", color: INK, marginBottom: 3 }}>{c.strength.module}{c.strength.headline ? ` — ${c.strength.headline}` : ""}</Text>
+                  <Text style={{ fontSize: 9.5 }}>{c.strength.detail}</Text>
+                </View>
+              )}
+              {c.gap && (
+                <View style={[st.s.card, { flex: 1, backgroundColor: "#FCE6E4" }]} wrap={false}>
+                  <Text style={[st.s.eyebrow, { color: "#C0392B" }]}>BRECHA CRÍTICA</Text>
+                  <Text style={{ fontFamily: "Helvetica-Bold", color: INK, marginBottom: 3 }}>{c.gap.module}{c.gap.headline ? ` — ${c.gap.headline}` : ""}</Text>
+                  <Text style={{ fontSize: 9.5 }}>{c.gap.detail}</Text>
+                </View>
+              )}
+            </View>
+          )}
 
-        {c.hiddenOpportunity ? (
-          <View style={[st.s.card, { backgroundColor: hex(BRAND_COLORS.lgold) }]} wrap={false}>
-            <Text style={[st.s.eyebrow, { color: st.gold }]}>OPORTUNIDAD OCULTA</Text>
-            <Text>{c.hiddenOpportunity}</Text>
-          </View>
-        ) : null}
+          {c.hiddenOpportunity ? (
+            <View style={[st.s.card, { backgroundColor: hex(BRAND_COLORS.lgold) }]} wrap={false}>
+              <Text style={[st.s.eyebrow, { color: st.gold }]}>OPORTUNIDAD OCULTA</Text>
+              <Text>{c.hiddenOpportunity}</Text>
+            </View>
+          ) : null}
 
-        {c.pathForward.length > 0 && (
-          <>
-            <Text style={st.s.h2}>Próximos pasos recomendados</Text>
-            <Table st={st} headers={["#", "Acción", "Resultado esperado"]} widths={[7, 48, 45]} rows={c.pathForward.map((p) => [String(p.priority), p.action, p.outcome])} highlightFirst />
-          </>
-        )}
-        {c.bottomLine ? <Text style={{ fontFamily: "Helvetica-Oblique", color: SUB, textAlign: "center", marginTop: 8 }}>“{c.bottomLine}”</Text> : null}
+          {c.pathForward.length > 0 && (
+            <>
+              <Text style={st.s.h2}>Próximos pasos recomendados</Text>
+              <Table st={st} headers={["#", "Acción", "Resultado esperado"]} widths={[7, 48, 45]} rows={c.pathForward.map((p) => [String(p.priority), p.action, p.outcome])} highlightFirst />
+            </>
+          )}
+          {c.bottomLine ? <Text style={{ fontFamily: "Helvetica-Oblique", color: SUB, textAlign: "center", marginTop: 8 }}>“{c.bottomLine}”</Text> : null}
+        </View>
       </Page>
 
       {/* Tablero */}
       <Page size="LETTER" style={st.s.page}>
         <Chrome brand={brand} st={st} />
-        <Text style={st.s.eyebrow}>2 · TABLERO</Text>
-        <Text style={st.s.h1}>Calificación por área</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
-          {c.modules.map((m) => (
-            <View key={m.key} style={[st.s.card, { width: "48.8%", backgroundColor: hex(LEVEL_SOFT_HEX[m.level]) }]} wrap={false}>
-              <Text style={{ fontFamily: "Helvetica-Bold", color: INK, fontSize: 10 }}>{m.label}</Text>
-              <View style={{ flexDirection: "row", alignItems: "flex-end", marginTop: 4 }}>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 24, color: hex(LEVEL_HEX[m.level]) , lineHeight: 1.15 }}>{String(m.score)}</Text>
-                <Text style={{ fontSize: 9, color: SUB, marginLeft: 4, marginBottom: 4 }}>/100 · {m.grade}</Text>
+        <View style={st.s.body}>
+          <Text style={st.s.eyebrow}>2 · TABLERO</Text>
+          <Text style={st.s.h1}>Calificación por área</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
+            {c.modules.map((m) => (
+              <View key={m.key} style={[st.s.card, { width: "48.8%", backgroundColor: hex(LEVEL_SOFT_HEX[m.level]) }]} wrap={false}>
+                <Text style={{ fontFamily: "Helvetica-Bold", color: INK, fontSize: 10 }}>{m.label}</Text>
+                <View style={{ flexDirection: "row", alignItems: "flex-end", marginTop: 4 }}>
+                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 24, color: hex(LEVEL_HEX[m.level]) , lineHeight: 1.15 }}>{String(m.score)}</Text>
+                  <Text style={{ fontSize: 9, color: SUB, marginLeft: 4, marginBottom: 4 }}>/100 · {m.grade}</Text>
+                </View>
+                {m.findings[0] ? <Text style={{ fontSize: 8.5, color: BODY, marginTop: 3 }}>{m.findings[0]}</Text> : null}
               </View>
-              {m.findings[0] ? <Text style={{ fontSize: 8.5, color: BODY, marginTop: 3 }}>{m.findings[0]}</Text> : null}
-            </View>
-          ))}
+            ))}
+          </View>
+          {c.coverage.length > 0 && (
+            <>
+              <Text style={st.s.h2}>Cobertura de la auditoría · {c.coverageConfidence}</Text>
+              <Table st={st} headers={["Área", "Estado", "Detalle"]} widths={[24, 16, 60]} rows={c.coverage.map((i) => [i.label, i.status, i.detail])} />
+            </>
+          )}
         </View>
-        {c.coverage.length > 0 && (
-          <>
-            <Text style={st.s.h2}>Cobertura de la auditoría · {c.coverageConfidence}</Text>
-            <Table st={st} headers={["Área", "Estado", "Detalle"]} widths={[24, 16, 60]} rows={c.coverage.map((i) => [i.label, i.status, i.detail])} />
-          </>
-        )}
       </Page>
 
       {/* Diagnóstico estratégico */}
       {c.hasAI && (c.causalChains.length > 0 || c.priorityActions.length > 0 || c.hiddenStrengths.length > 0 || Boolean(c.competitiveNarrative)) && (
         <Page size="LETTER" style={st.s.page}>
           <Chrome brand={brand} st={st} />
-          <Text style={st.s.eyebrow}>3 · DIAGNÓSTICO ESTRATÉGICO</Text>
-          <Text style={st.s.h1}>Lo que conecta los hallazgos</Text>
-          {c.competitiveNarrative ? (
-            <View style={[st.s.card, { backgroundColor: hex(BRAND_COLORS.lnavy) }]} wrap={false}>
-              <Text style={[st.s.eyebrow, { color: st.navy }]}>EVALUACIÓN COMPETITIVA</Text>
-              <Text style={{ fontFamily: "Helvetica-Oblique", color: INK }}>{c.competitiveNarrative}</Text>
-            </View>
-          ) : null}
-          {c.causalChains.length > 0 && <Text style={st.s.h2}>Cadenas causales</Text>}
-          {c.causalChains.map((ch, i) => (
-            <View key={i} style={st.s.card} wrap={false}>
-              <Text style={{ fontFamily: "Helvetica-Bold", color: INK, marginBottom: 3 }}>{ch.chain}</Text>
-              <Text style={{ fontSize: 9.5, marginBottom: 3 }}>{ch.impact}</Text>
-              <Text style={{ fontSize: 9, color: st.teal, fontFamily: "Helvetica-Bold" }}>Secuencia de corrección: {ch.fix}</Text>
-            </View>
-          ))}
-          {c.hiddenStrengths.length > 0 && <Text style={st.s.h2}>Fortalezas ocultas</Text>}
-          {c.hiddenStrengths.map((item, i) => (
-            <Bullet key={i} st={st} color="#1E8E5A">{`${item.strength} — Oportunidad: ${item.opportunity}`}</Bullet>
-          ))}
-          {c.compoundingGaps.length > 0 && <Text style={st.s.h2}>Brechas que se potencian</Text>}
-          {c.compoundingGaps.map((g, i) => (
-            <Bullet key={i} st={st} color="#C0392B">{`${g.description} — ${g.impact}`}</Bullet>
-          ))}
-          {c.priorityActions.length > 0 && (
-            <>
-              <Text style={st.s.h2}>Plan de acción prioritario</Text>
-              <Table
-                st={st}
-                headers={["#", "Acción", "Justificación", "Plazo"]}
-                widths={[6, 34, 44, 16]}
-                rows={c.priorityActions.map((a, i) => [String(i + 1), a.action, [a.rationale, a.unlocks ? `Desbloquea: ${a.unlocks}` : ""].filter(Boolean).join(" "), a.timeframe])}
-                highlightFirst
-              />
-            </>
-          )}
+          <View style={st.s.body}>
+            <Text style={st.s.eyebrow}>3 · DIAGNÓSTICO ESTRATÉGICO</Text>
+            <Text style={st.s.h1}>Lo que conecta los hallazgos</Text>
+            {c.competitiveNarrative ? (
+              <View style={[st.s.card, { backgroundColor: hex(BRAND_COLORS.lnavy) }]} wrap={false}>
+                <Text style={[st.s.eyebrow, { color: st.navy }]}>EVALUACIÓN COMPETITIVA</Text>
+                <Text style={{ fontFamily: "Helvetica-Oblique", color: INK }}>{c.competitiveNarrative}</Text>
+              </View>
+            ) : null}
+            {c.causalChains.length > 0 && <Text style={st.s.h2}>Cadenas causales</Text>}
+            {c.causalChains.map((ch, i) => (
+              <View key={i} style={st.s.card} wrap={false}>
+                <Text style={{ fontFamily: "Helvetica-Bold", color: INK, marginBottom: 3 }}>{ch.chain}</Text>
+                <Text style={{ fontSize: 9.5, marginBottom: 3 }}>{ch.impact}</Text>
+                <Text style={{ fontSize: 9, color: st.teal, fontFamily: "Helvetica-Bold" }}>Secuencia de corrección: {ch.fix}</Text>
+              </View>
+            ))}
+            {c.hiddenStrengths.length > 0 && <Text style={st.s.h2}>Fortalezas ocultas</Text>}
+            {c.hiddenStrengths.map((item, i) => (
+              <Bullet key={i} st={st} color="#1E8E5A">{`${item.strength} — Oportunidad: ${item.opportunity}`}</Bullet>
+            ))}
+            {c.compoundingGaps.length > 0 && <Text style={st.s.h2}>Brechas que se potencian</Text>}
+            {c.compoundingGaps.map((g, i) => (
+              <Bullet key={i} st={st} color="#C0392B">{`${g.description} — ${g.impact}`}</Bullet>
+            ))}
+            {c.priorityActions.length > 0 && (
+              <>
+                <Text style={st.s.h2}>Plan de acción prioritario</Text>
+                <Table
+                  st={st}
+                  headers={["#", "Acción", "Justificación", "Plazo"]}
+                  widths={[6, 34, 44, 16]}
+                  rows={c.priorityActions.map((a, i) => [String(i + 1), a.action, [a.rationale, a.unlocks ? `Desbloquea: ${a.unlocks}` : ""].filter(Boolean).join(" "), a.timeframe])}
+                  highlightFirst
+                />
+              </>
+            )}
+          </View>
         </Page>
       )}
 
       {/* Evidencia por área */}
       <Page size="LETTER" style={st.s.page}>
         <Chrome brand={brand} st={st} />
-        <Text style={st.s.eyebrow}>4 · EVIDENCIA</Text>
-        <Text style={st.s.h1}>Evidencia detallada por área</Text>
-        {c.signals.length > 0 && (
-          <>
-            <Text style={st.s.h2}>Hechos importantes descubiertos</Text>
-            {c.signals.map((s, i) => (
-              <View key={i} style={st.s.card} wrap={false}>
-                <Text style={{ fontFamily: "Helvetica-Bold", color: INK }}>{s.headline}</Text>
-                <Text style={{ fontSize: 9.5, marginTop: 2 }}>{s.detail}</Text>
-                <Text style={[st.s.muted, { marginTop: 3 }]}>Fuente: {s.source} · Confianza: {s.confidence}</Text>
-              </View>
-            ))}
-          </>
-        )}
-        {c.modules.map((m) => (
-          <View key={m.key} style={{ marginBottom: 6 }}>
-            <View wrap={false}>
-              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, marginBottom: 6 }}>
-                <Text style={[st.s.h2, { marginTop: 0, marginBottom: 0, flex: 1 }]}>{m.label}</Text>
-                <Text style={[st.s.pill, { backgroundColor: hex(LEVEL_SOFT_HEX[m.level]), color: hex(LEVEL_HEX[m.level]) }]}>{m.grade} · {m.score}/100</Text>
-              </View>
-              {m.metrics.length > 0 && (
-                <View style={{ flexDirection: "row", marginBottom: 6 }}>
-                  {m.metrics.map(([label, value], i) => (
-                    <View key={i} style={[st.s.card, { flex: 1, marginRight: i === m.metrics.length - 1 ? 0 : 6, marginBottom: 0, padding: 8 }]}>
-                      <Text style={{ fontSize: 7.5, color: SUB }}>{label}</Text>
-                      <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 11, color: st.navy, marginTop: 2 }}>{value}</Text>
-                    </View>
-                  ))}
+        <View style={st.s.body}>
+          <Text style={st.s.eyebrow}>4 · EVIDENCIA</Text>
+          <Text style={st.s.h1}>Evidencia detallada por área</Text>
+          {c.signals.length > 0 && (
+            <>
+              <Text style={st.s.h2}>Hechos importantes descubiertos</Text>
+              {c.signals.map((s, i) => (
+                <View key={i} style={st.s.card} wrap={false}>
+                  <Text style={{ fontFamily: "Helvetica-Bold", color: INK }}>{s.headline}</Text>
+                  <Text style={{ fontSize: 9.5, marginTop: 2 }}>{s.detail}</Text>
+                  <Text style={[st.s.muted, { marginTop: 3 }]}>Fuente: {s.source} · Confianza: {s.confidence}</Text>
                 </View>
-              )}
+              ))}
+            </>
+          )}
+          {c.modules.map((m) => (
+            <View key={m.key} style={{ marginBottom: 6 }}>
+              <View wrap={false}>
+                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, marginBottom: 6 }}>
+                  <Text style={[st.s.h2, { marginTop: 0, marginBottom: 0, flex: 1 }]}>{m.label}</Text>
+                  <Text style={[st.s.pill, { backgroundColor: hex(LEVEL_SOFT_HEX[m.level]), color: hex(LEVEL_HEX[m.level]) }]}>{m.grade} · {m.score}/100</Text>
+                </View>
+                {m.metrics.length > 0 && (
+                  <View style={{ flexDirection: "row", marginBottom: 6 }}>
+                    {m.metrics.map(([label, value], i) => (
+                      <View key={i} style={[st.s.card, { flex: 1, marginRight: i === m.metrics.length - 1 ? 0 : 6, marginBottom: 0, padding: 8 }]}>
+                        <Text style={{ fontSize: 7.5, color: SUB }}>{label}</Text>
+                        <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 11, color: st.navy, marginTop: 2 }}>{value}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+              {m.findings.length > 0 && <Text style={st.s.h3}>Hallazgos clave</Text>}
+              {m.findings.map((f, i) => (
+                <Bullet key={i} st={st}>{f}</Bullet>
+              ))}
+              {m.recommendations.length > 0 && <Text style={st.s.h3}>Recomendaciones</Text>}
+              {m.recommendations.map((r, i) => (
+                <Bullet key={i} st={st} color={st.gold}>{r}</Bullet>
+              ))}
             </View>
-            {m.findings.length > 0 && <Text style={st.s.h3}>Hallazgos clave</Text>}
-            {m.findings.map((f, i) => (
-              <Bullet key={i} st={st}>{f}</Bullet>
-            ))}
-            {m.recommendations.length > 0 && <Text style={st.s.h3}>Recomendaciones</Text>}
-            {m.recommendations.map((r, i) => (
-              <Bullet key={i} st={st} color={st.gold}>{r}</Bullet>
-            ))}
-          </View>
-        ))}
+          ))}
+        </View>
       </Page>
 
       {/* Recomendaciones y cierre */}
       <Page size="LETTER" style={st.s.page}>
         <Chrome brand={brand} st={st} />
-        <Text style={st.s.eyebrow}>5 · RECOMENDACIONES</Text>
-        <Text style={st.s.h1}>Recomendaciones priorizadas</Text>
-        {c.recommendations.length > 0 ? (
-          <Table
-            st={st}
-            headers={["#", "Recomendación", "Impacto", "Esfuerzo", "Plazo"]}
-            widths={[6, 58, 12, 12, 12]}
-            rows={c.recommendations.map((r, i) => [String(i + 1), `${r.title}${r.description ? `\n${r.description}` : ""}`, r.impact, r.effort, r.timeframe ?? "—"])}
-            highlightFirst
-          />
-        ) : (
-          <Text style={st.s.muted}>No hay recomendaciones adicionales para este reporte.</Text>
-        )}
+        <View style={st.s.body}>
+          <Text style={st.s.eyebrow}>5 · RECOMENDACIONES</Text>
+          <Text style={st.s.h1}>Recomendaciones priorizadas</Text>
+          {c.recommendations.length > 0 ? (
+            <Table
+              st={st}
+              headers={["#", "Recomendación", "Impacto", "Esfuerzo", "Plazo"]}
+              widths={[6, 58, 12, 12, 12]}
+              rows={c.recommendations.map((r, i) => [String(i + 1), `${r.title}${r.description ? `\n${r.description}` : ""}`, r.impact, r.effort, r.timeframe ?? "—"])}
+              highlightFirst
+            />
+          ) : (
+            <Text style={st.s.muted}>No hay recomendaciones adicionales para este reporte.</Text>
+          )}
 
-        {c.caveats.length > 0 && (
-          <>
-            <Text style={st.s.h2}>Notas sobre la calidad de los datos</Text>
-            {c.caveats.map((n, i) => (
-              <Bullet key={i} st={st} color={SUB}>{n}</Bullet>
-            ))}
-          </>
-        )}
+          {c.caveats.length > 0 && (
+            <>
+              <Text style={st.s.h2}>Notas sobre la calidad de los datos</Text>
+              {c.caveats.map((n, i) => (
+                <Bullet key={i} st={st} color={SUB}>{n}</Bullet>
+              ))}
+            </>
+          )}
 
-        <View style={{ marginTop: 26, borderTopWidth: 1.5, borderTopColor: st.navy, paddingTop: 12 }} wrap={false}>
-          <Text style={{ fontFamily: "Helvetica-Bold", marginBottom: 6 }}>Atentamente:</Text>
-          {signature ? <Image src={signature} style={{ width: 170, height: 82, marginBottom: 4 }} /> : <View style={{ height: 36 }} />}
-          <Text style={{ fontFamily: "Helvetica-Bold", color: st.navy }}>{brand.signer}</Text>
-          <Text style={{ fontFamily: "Helvetica-Bold", color: st.navy }}>{brand.signerRole}</Text>
-          <Text style={{ color: st.navy }}>{brand.company}</Text>
-          <Text style={{ color: st.navy }}>{brand.phone.replace(/\s+/, "-")}</Text>
+          {c.agentInsights.length === 0 && closing}
         </View>
       </Page>
+
+      {c.agentInsights.length > 0 && (
+        <Page size="LETTER" style={st.s.page}>
+          <Chrome brand={brand} st={st} />
+          <View style={st.s.body}>
+            <Text style={st.s.eyebrow}>6 · ANÁLISIS COMPLEMENTARIO</Text>
+            <Text style={st.s.h1}>Aportes del agente de IA</Text>
+            <Text style={[st.s.muted, { marginBottom: 8 }]}>
+              Elaborados con asistencia de inteligencia artificial a partir de los datos de esta auditoría y de fuentes públicas citadas; revisados y aprobados antes de incluirse.
+            </Text>
+            {c.agentInsights.map((insight, i) => (
+              <View key={i} style={{ marginBottom: 10 }}>
+                <Text style={st.s.h2}>{insight.title}</Text>
+                {insight.blocks.map((block, j) =>
+                  block.kind === "h" ? (
+                    <Text key={j} style={st.s.h3}>{block.text}</Text>
+                  ) : block.kind === "li" ? (
+                    <Bullet key={j} st={st}>{block.text}</Bullet>
+                  ) : (
+                    <Text key={j} style={st.s.p}>{block.text}</Text>
+                  ),
+                )}
+                {insight.sources.length > 0 && (
+                  <View style={[st.s.card, { marginTop: 4 }]}>
+                    <Text style={[st.s.muted, { fontFamily: "Helvetica-Bold", marginBottom: 2 }]}>Fuentes consultadas</Text>
+                    {insight.sources.map((src, k) => (
+                      <Link key={k} src={src} style={[st.s.muted, { color: st.blue, textDecoration: "none" }]}>{src}</Link>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ))}
+            {closing}
+          </View>
+        </Page>
+      )}
     </Document>
   );
 }

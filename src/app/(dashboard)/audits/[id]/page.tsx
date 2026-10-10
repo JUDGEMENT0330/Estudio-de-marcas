@@ -12,6 +12,7 @@ import { ModuleCard } from "@/components/reports/module-card";
 import { IntelligenceCard } from "@/components/reports/intelligence-card";
 import { AuditLoading } from "@/components/reports/audit-loading";
 import { AIAnalysisCard } from "@/components/reports/ai-analysis-card";
+import { AIAgentPanel } from "@/components/reports/ai-agent-panel";
 import { StrategicIntelligenceCard } from "@/components/reports/strategic-intelligence-card";
 import { BusinessContextCard } from "@/components/reports/business-context-card";
 import { repairMojibakeText, repairMojibakeValue } from "@/lib/text/repair";
@@ -821,6 +822,8 @@ export default function AuditReportPage() {
 
       {/* ═══════════════ Overall Executive Summary & Score ═══════════════ */}
       {scores && <ExecutiveSummarySection scores={scores} result={result} />}
+
+      <AIAgentPanel reportId={report.id} insights={result.agent_insights ?? []} />
 
       <AuditCoverageSummaryCard result={result} />
 

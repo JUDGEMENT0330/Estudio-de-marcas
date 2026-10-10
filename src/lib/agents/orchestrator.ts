@@ -29,6 +29,7 @@ import { estimateRevenueImpact } from "./tools/revenue-calc";
 import { gatherBusinessIntelligence } from "./tools/intent-signals";
 import { gatherBusinessEnrichment } from "./tools/business-enrichment";
 import { complete, extractJSON, isAIConfigured, completeWithTools } from "@/lib/ai/claude";
+import { syncAIConfigFromSecrets } from "@/lib/ai/runtime-config";
 import { getNarrativePrompt } from "./prompts/narrative";
 import { getOrchestratorSystemPrompt } from "./prompts/orchestrator-system";
 import {
@@ -351,6 +352,12 @@ export async function runAuditPipeline(
 
   const allRecommendations: Recommendation[] = [];
   const evidence: EvidenceModule[] = [];
+
+  // Las llaves de IA guardadas en Configuración deben llegar a los proveedores.
+  const ai = await syncAIConfigFromSecrets();
+  if (!ai.configured) {
+    console.warn("[orchestrator] IA no configurada: el reporte se genera sin síntesis de IA.");
+  }
 
   // ========== Phase 0: UNDERSTAND (Dynamic Business Intelligence) ==========
   report("understand", "Understanding your business type...", 2);

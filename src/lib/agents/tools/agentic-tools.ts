@@ -13,6 +13,7 @@
 
 import type { ToolDefinition, ToolExecutor } from "@/lib/ai/types";
 import { getProviderSecret } from "@/lib/config/provider-config";
+import { placesLanguage } from "@/lib/geo/places";
 import { isIP } from "node:net";
 import { lookup } from "node:dns/promises";
 
@@ -244,7 +245,7 @@ async function executeWebSearch(input: Record<string, unknown>): Promise<string>
       const params = new URLSearchParams({
         query,
         key: googleApiKey,
-        language: "en",
+        language: placesLanguage(),
       });
       const res = await fetch(
         `https://maps.googleapis.com/maps/api/place/textsearch/json?${params}`,
@@ -363,7 +364,7 @@ async function executeSearchGooglePlaces(input: Record<string, unknown>): Promis
     const params = new URLSearchParams({
       query,
       key: apiKey,
-      language: "en",
+      language: placesLanguage(),
     });
     if (location) {
       params.set("location", location);
@@ -424,7 +425,7 @@ async function executeGetPlaceDetails(input: Record<string, unknown>): Promise<s
       place_id: placeId,
       fields,
       key: apiKey,
-      language: "en",
+      language: placesLanguage(),
       reviews_sort: "newest",
     });
 
