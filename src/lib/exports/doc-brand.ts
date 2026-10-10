@@ -3,11 +3,13 @@ import path from "node:path";
 import { BRAND, BRAND_COLORS } from "@/lib/brand";
 import { readBrandAsset } from "@/lib/brand/assets.server";
 import type { AuditInput, Report, WhiteLabelConfig } from "@/lib/db/types";
+import { loadDocImage, toDocImage, type DocImage } from "./doc-image";
+import { techFooterBand } from "./tech-footer";
 
 /**
  * Identidad de marca resuelta para un documento exportado.
  * Valores por defecto: Cyber Valtorix. El usuario puede personalizar razón
- * social, contacto, colores y logo desde Configuración.
+ * social, contacto, colores, logo, firmante, cargo y firma desde Configuración.
  */
 export interface DocBrand {
   company: string;
@@ -23,12 +25,14 @@ export interface DocBrand {
   blue: string;
   teal: string;
   text: string;
-  logo: Buffer | null;
-  /** Ancho / alto del logo (1 = cuadrado). Permite usar logos horizontales sin deformarlos. */
-  logoRatio: number;
-  footerIcon: Buffer | null;
-  /** Firma y sello: solo si existe localmente o por variable de entorno. */
-  signature: Buffer | null;
+  /** Logo en PNG o JPEG (convertido si venía en otro formato). */
+  logo: DocImage | null;
+  /** true cuando el logo configurado por URL no se pudo usar y se cayó al escudo. */
+  logoFallback: boolean;
+  /** Banda tecnológica del pie de página, en los colores de la marca. */
+  footerBand: DocImage;
+  /** Firma y sello: de Configuración, variable de entorno o archivo local privado. */
+  signature: DocImage | null;
 }
 
 function cleanHex(value: string | undefined, fallback: string): string {
@@ -36,27 +40,11 @@ function cleanHex(value: string | undefined, fallback: string): string {
   return hex && /^[0-9a-f]{6}$/i.test(hex) ? hex.toUpperCase() : fallback;
 }
 
-async function fetchLogo(url: string): Promise<Buffer | null> {
-  try {
-    if (url.startsWith("data:image/png;base64,")) {
-      return Buffer.from(url.slice("data:image/png;base64,".length), "base64");
-    }
-    if (!/^https:\/\//i.test(url)) return null;
-    const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    const type = response.headers.get("content-type") ?? "";
-    if (!response.ok || !type.includes("png")) return null;
-    const data = Buffer.from(await response.arrayBuffer());
-    return data.length > 0 && data.length < 3_000_000 ? data : null;
-  } catch {
-    return null;
-  }
-}
-
-function readSignature(): Buffer | null {
+function readSignatureFile(): Buffer | null {
   const b64 = process.env.BRAND_SIGNATURE_BASE64?.trim();
   if (b64) {
     try {
-      return Buffer.from(b64.replace(/^data:image\/png;base64,/, ""), "base64");
+      return Buffer.from(b64.replace(/^data:image\/[a-z0-9.+-]+;base64,/i, ""), "base64");
     } catch {
       return null;
     }
@@ -77,47 +65,53 @@ function readSignature(): Buffer | null {
   return null;
 }
 
-/** Lee ancho y alto de un PNG desde su cabecera IHDR. */
-export function pngSize(data: Buffer | null): { width: number; height: number } | null {
-  if (!data || data.length < 24 || data.readUInt32BE(12) !== 0x49484452) return null;
-  return { width: data.readUInt32BE(16), height: data.readUInt32BE(20) };
-}
-
 /**
- * Tamaño del logo dentro de una caja (alto máximo y ancho máximo), conservando
- * la proporción original.
+ * Tamaño de una imagen dentro de una caja (alto máximo y ancho máximo),
+ * conservando su proporción original.
  */
-export function fitLogo(brand: DocBrand, maxHeight: number, maxWidth: number): { width: number; height: number } {
+export function fitImage(image: DocImage | null, maxHeight: number, maxWidth: number): { width: number; height: number } {
+  const ratio = image && image.height > 0 ? image.width / image.height : 1;
   let height = maxHeight;
-  let width = height * brand.logoRatio;
+  let width = height * ratio;
   if (width > maxWidth) {
     width = maxWidth;
-    height = width / brand.logoRatio;
+    height = width / ratio;
   }
   return { width, height };
 }
 
+export function fitLogo(brand: DocBrand, maxHeight: number, maxWidth: number): { width: number; height: number } {
+  return fitImage(brand.logo, maxHeight, maxWidth);
+}
+
 export async function resolveDocBrand(config?: WhiteLabelConfig): Promise<DocBrand> {
-  const customLogo = config?.logo_url ? await fetchLogo(config.logo_url) : null;
-  const logo = customLogo ?? readBrandAsset("escudo");
-  const size = pngSize(logo);
+  const [customLogo, uploadedSignature, fileSignature] = await Promise.all([
+    loadDocImage(config?.logo_url),
+    loadDocImage(config?.signature_data),
+    toDocImage(readSignatureFile()),
+  ]);
+  if (config?.logo_url?.trim() && !customLogo) {
+    console.warn("[doc-brand] El logo configurado no es una imagen utilizable; se usa el escudo por defecto.");
+  }
+  const primary = cleanHex(config?.primary_color, BRAND_COLORS.navy);
+  const accent = cleanHex(config?.secondary_color, BRAND_COLORS.gold);
   return {
     company: config?.company_name?.trim() || BRAND.company,
     companyShort: BRAND.companyShort,
     email: config?.contact_email?.trim() || BRAND.email,
     phone: config?.contact_phone?.trim() || BRAND.phone,
     website: BRAND.website,
-    signer: BRAND.signer,
-    signerRole: BRAND.signerRole,
-    primary: cleanHex(config?.primary_color, BRAND_COLORS.navy),
-    accent: cleanHex(config?.secondary_color, BRAND_COLORS.gold),
+    signer: config?.signer_name?.trim() || BRAND.signer,
+    signerRole: config?.signer_role?.trim() || BRAND.signerRole,
+    primary,
+    accent,
     blue: BRAND_COLORS.blue,
     teal: BRAND_COLORS.teal,
     text: BRAND_COLORS.dgray,
-    logo,
-    logoRatio: size && size.height > 0 ? size.width / size.height : 1,
-    footerIcon: readBrandAsset("icono-footer"),
-    signature: readSignature(),
+    logo: customLogo ?? (await toDocImage(readBrandAsset("escudo"))),
+    logoFallback: Boolean(config?.logo_url?.trim() && !customLogo),
+    footerBand: techFooterBand(primary, accent, BRAND_COLORS.blue),
+    signature: uploadedSignature ?? fileSignature,
   };
 }
 

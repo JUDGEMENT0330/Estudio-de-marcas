@@ -18,6 +18,9 @@ interface UserSettings {
     secondary_color?: string;
     contact_email?: string;
     contact_phone?: string;
+    signer_name?: string;
+    signer_role?: string;
+    signature_data?: string;
   };
   widget_api_key?: string;
 }
@@ -35,7 +38,38 @@ const BRAND_DEFAULTS = {
   secondary_color: "#C09A3A",
   contact_email: "alexmancia@cybervaltorix.com",
   contact_phone: "7803 9807",
+  signer_name: "MDSc BORIS ALEXANDER RODRÍGUEZ MANCÍA",
+  signer_role: "GERENTE",
+  signature_data: "",
 };
+
+/**
+ * Convierte cualquier imagen (PNG, JPG, WebP, SVG…) a PNG en el navegador,
+ * para que Word, PowerPoint, Excel y el PDF siempre puedan incrustarla.
+ */
+async function fileToPngDataUri(file: File, maxSide = 1200): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("No se pudo leer la imagen."));
+      image.src = url;
+    });
+    const w = img.naturalWidth || 1200;
+    const h = img.naturalHeight || 400;
+    const scale = Math.min(1, maxSide / Math.max(w, h)) || 1;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("El navegador no permite procesar imágenes.");
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/png");
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 const STORAGE_LABEL: Record<RuntimeInfo["almacenamiento"], string> = {
   mysql: "MySQL del hosting (persistente)",
@@ -102,6 +136,9 @@ export default function SettingsPage() {
             secondary_color: config.secondary_color || BRAND_DEFAULTS.secondary_color,
             contact_email: config.contact_email || BRAND_DEFAULTS.contact_email,
             contact_phone: config.contact_phone || BRAND_DEFAULTS.contact_phone,
+            signer_name: config.signer_name || BRAND_DEFAULTS.signer_name,
+            signer_role: config.signer_role || BRAND_DEFAULTS.signer_role,
+            signature_data: config.signature_data || "",
           });
         }
         await loadDataSources();
@@ -193,6 +230,20 @@ export default function SettingsPage() {
     return source.required ? "Falta" : "Opcional";
   };
 
+  const handleImageUpload = async (field: "logo_url" | "signature_data", file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 8_000_000) {
+      setMessage({ type: "error", text: "La imagen pesa más de 8 MB. Usa una versión más liviana." });
+      return;
+    }
+    try {
+      handleInputChange(field, await fileToPngDataUri(file, field === "logo_url" ? 1000 : 700));
+      setMessage({ type: "success", text: "Imagen lista. Presiona «Guardar identidad de marca» para aplicarla." });
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "No se pudo leer la imagen." });
+    }
+  };
+
   const handleSave = async () => {
     if (!settings) return;
 
@@ -209,7 +260,11 @@ export default function SettingsPage() {
       if (response.ok) {
         const data = await response.json();
         setSettings(data);
-        setMessage({ type: "success", text: "Identidad de marca guardada. Se aplicará a los próximos documentos." });
+        setMessage(
+          data.warning
+            ? { type: "error", text: data.warning }
+            : { type: "success", text: "Identidad de marca guardada. Se aplicará a los próximos documentos." },
+        );
       } else {
         const error = await response.json();
         setMessage({ type: "error", text: error.error || "No se pudo guardar la configuración." });
@@ -425,13 +480,28 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="text-[13px] font-medium text-foreground/80">URL del logo (opcional)</label>
-                <Input
-                  value={formData.logo_url}
-                  onChange={(e) => handleInputChange("logo_url", e.target.value)}
-                  placeholder="Vacío = escudo Cyber Valtorix"
-                  className="mt-2"
-                />
+                <label className="text-[13px] font-medium text-foreground/80">Logo (URL o archivo)</label>
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    value={formData.logo_url.startsWith("data:") ? "Imagen subida desde este equipo" : formData.logo_url}
+                    onChange={(e) => handleInputChange("logo_url", e.target.value)}
+                    readOnly={formData.logo_url.startsWith("data:")}
+                    placeholder="https://… (vacío = escudo Cyber Valtorix)"
+                    className="flex-1"
+                  />
+                  <label className="press inline-flex h-11 cursor-pointer items-center rounded-full border border-input bg-card px-4 text-[13px] font-medium hover:bg-secondary">
+                    Subir
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload("logo_url", e.target.files?.[0])} />
+                  </label>
+                  {formData.logo_url && (
+                    <Button variant="ghost" size="icon" onClick={() => handleInputChange("logo_url", "")} title="Quitar logo">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <p className="mt-1.5 text-[12px] text-muted-foreground">
+                  Acepta PNG, JPG, WebP o SVG. Si la URL no se puede usar en los documentos te avisaremos al guardar.
+                </p>
               </div>
               <div>
                 <label className="text-[13px] font-medium text-foreground/80">Color principal</label>
@@ -486,13 +556,60 @@ export default function SettingsPage() {
                   className="mt-2"
                 />
               </div>
+              <div>
+                <label className="text-[13px] font-medium text-foreground/80">Nombre del firmante</label>
+                <Input
+                  value={formData.signer_name}
+                  onChange={(e) => handleInputChange("signer_name", e.target.value)}
+                  placeholder="MDSc BORIS ALEXANDER RODRÍGUEZ MANCÍA"
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <label className="text-[13px] font-medium text-foreground/80">Cargo</label>
+                <Input
+                  value={formData.signer_role}
+                  onChange={(e) => handleInputChange("signer_role", e.target.value)}
+                  placeholder="GERENTE"
+                  className="mt-2"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-[13px] font-medium text-foreground/80">Firma y sello (imagen)</label>
+                <div className="mt-2 flex flex-wrap items-center gap-3 rounded-2xl bg-secondary/60 p-3">
+                  <div className="flex h-20 w-48 items-center justify-center rounded-xl bg-white">
+                    {formData.signature_data ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={formData.signature_data} alt="Firma" className="max-h-[72px] max-w-[180px] object-contain" />
+                    ) : (
+                      <span className="px-3 text-center text-[12px] text-muted-foreground">Sin firma cargada (se usa la del servidor si existe)</span>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[14px] font-semibold">{formData.signer_name}</p>
+                    <p className="text-[12px] font-semibold tracking-wide text-brand-gold">{formData.signer_role}</p>
+                  </div>
+                  <div className="ml-auto flex gap-2">
+                    <label className="press inline-flex h-9 cursor-pointer items-center rounded-full border border-input bg-card px-4 text-[13px] font-medium hover:bg-secondary">
+                      Subir firma
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload("signature_data", e.target.files?.[0])} />
+                    </label>
+                    {formData.signature_data && (
+                      <Button variant="ghost" size="sm" onClick={() => handleInputChange("signature_data", "")}>Quitar</Button>
+                    )}
+                  </div>
+                </div>
+                <p className="mt-1.5 text-[12px] text-muted-foreground">
+                  Se guarda en tu base de datos (no en el repositorio). Usa un PNG con fondo transparente para mejor resultado. La firma, el nombre y el cargo aparecen centrados al cierre de los informes.
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button onClick={handleSave} disabled={saving} className="flex-1">
                 {saving ? "Guardando…" : "Guardar identidad de marca"}
               </Button>
-              <Button variant="outline" onClick={() => setFormData(BRAND_DEFAULTS)} disabled={saving}>
+              <Button variant="outline" onClick={() => setFormData({ ...BRAND_DEFAULTS, signature_data: formData.signature_data })} disabled={saving}>
                 Restablecer Cyber Valtorix
               </Button>
             </div>

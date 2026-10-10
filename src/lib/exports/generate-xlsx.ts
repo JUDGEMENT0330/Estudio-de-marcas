@@ -25,13 +25,15 @@ export async function generateReportXLSX(report: Report, branding?: WhiteLabelCo
   wb.title = `Auditoría digital — ${c.businessName}`;
   wb.created = new Date();
 
-  const logoId = brand.logo ? wb.addImage({ buffer: brand.logo as unknown as ExcelJS.Buffer, extension: "png" }) : undefined;
+  const logoId = brand.logo
+    ? wb.addImage({ buffer: brand.logo.data as unknown as ExcelJS.Buffer, extension: brand.logo.type === "jpg" ? "jpeg" : "png" })
+    : undefined;
 
   const setupSheet = (ws: ExcelJS.Worksheet) => {
     ws.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.5, right: 0.5, top: 0.8, bottom: 0.7, header: 0.3, footer: 0.3 } };
     ws.headerFooter = {
       oddHeader: `&R&"Times New Roman,Bold"&11${brand.company}`,
-      oddFooter: `&L&"Times New Roman,Regular"&9${brand.email}&C&9Página &P de &N&R&"Times New Roman,Regular"&9${brand.phone}`,
+      oddFooter: `&L&"Consolas,Regular"&8${brand.email}&C&"Consolas,Bold"&8&K${brand.accent}PÁG &K${brand.primary}&P / &N&R&"Consolas,Regular"&8${brand.phone}`,
     };
     ws.views = [{ showGridLines: false }];
   };
@@ -214,6 +216,28 @@ export async function generateReportXLSX(report: Report, branding?: WhiteLabelCo
     r++;
     tableHeader(cov, r++, ["Señal", "Confianza", "Detalle y fuente"]);
     for (const s of c.signals) dataRow(cov, r++, [s.headline, s.confidence, `${s.detail} (Fuente: ${s.source})`]);
+  }
+
+  // ── Análisis complementario (agente IA aprobado) ─────────
+  if (c.agentInsights.length) {
+    const ia = wb.addWorksheet("Análisis IA", { properties: { tabColor: { argb: argb(brand.accent) } } });
+    setupSheet(ia);
+    ia.columns = [{ width: 34 }, { width: 110 }];
+    sheetTitle(ia, "Análisis complementario (agente de IA)", "B");
+    let r = 4;
+    for (const insight of c.agentInsights) {
+      tableHeader(ia, r++, [insight.title, ""]);
+      let section = "";
+      for (const block of insight.blocks) {
+        if (block.kind === "h") {
+          section = block.text;
+          continue;
+        }
+        dataRow(ia, r++, [section, block.kind === "li" ? `• ${block.text}` : block.text], undefined, true);
+      }
+      if (insight.sources.length) dataRow(ia, r++, ["Fuentes", insight.sources.join("\n")]);
+      r++;
+    }
   }
 
   const buffer = await wb.xlsx.writeBuffer();

@@ -8,6 +8,10 @@
 > - La app es privada: no la enlaces desde el sitio público ni quites el `noindex` (`src/app/robots.ts`, middleware). No dependas de escribir en disco fuera de `getDataDir()`.
 > - Nunca subas `private/` ni la firma/sello: el repositorio es público.
 > - Estilo visual: lenguaje de diseño tipo Apple (tokens en `src/app/globals.css`).
+> - Imágenes de documentos (logo, firma) pasan por `src/lib/exports/doc-image.ts` (PNG/JPEG; otros formatos se convierten). La firma, el nombre y el cargo se configuran en Configuración y se guardan en la base de datos. El pie tecnológico se dibuja en `src/lib/exports/tech-footer.ts`.
+> - Las llaves de IA guardadas en Configuración se aplican con `syncAIConfigFromSecrets()` (`src/lib/ai/runtime-config.ts`); llámala antes de usar la IA.
+> - Agente IA del reporte: `src/lib/agents/report-agent.ts` + `/api/report/{id}/agent` (borrador) y `/api/report/{id}/insights` (aportes aprobados en `result.agent_insights`, que salen en los cuatro formatos).
+> - En el PDF no pongas `lineHeight` en `<Page>`: react-pdf deja de dibujar el número de página. Usa `st.s.body`.
 
 # Phantom Reach Agent Playbook (original)
 
