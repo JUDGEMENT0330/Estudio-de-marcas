@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import type { BusinessIntelligenceResult, BusinessIntelligenceSignal } from "@/lib/db/types";
 import { repairMojibakeText } from "@/lib/text/repair";
+import { translateEnum } from "@/lib/reports/display-labels";
 
 const iconMap: Record<BusinessIntelligenceSignal["icon_hint"], typeof Building> = {
   building: Building,
@@ -34,25 +35,25 @@ export function IntelligenceCard({ data }: IntelligenceCardProps) {
   if (data.signal_count === 0) return null;
 
   return (
-    <Card className="relative overflow-hidden border-amber-200/60 bg-gradient-to-br from-amber-50/50 via-white to-orange-50/30">
+    <Card className="relative overflow-hidden bg-gradient-to-br from-brand-cream/50 via-white to-white">
       {/* Decorative corner accent */}
       <div className="absolute top-0 right-0 h-24 w-24 bg-gradient-to-bl from-amber-200/30 to-transparent rounded-bl-full" />
 
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-cream text-brand-gold">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle className="text-lg">Important Facts Uncovered</CardTitle>
+              <CardTitle className="text-lg">Hechos importantes descubiertos</CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {data.signal_count} intelligence signal{data.signal_count !== 1 ? "s" : ""} detected
+                {data.signal_count} {data.signal_count !== 1 ? "señales de inteligencia detectadas" : "señal de inteligencia detectada"}
               </p>
             </div>
           </div>
           <Badge variant="outline" className="text-xs border-amber-300 text-amber-700 bg-amber-50">
-            {data.signal_count} signal{data.signal_count !== 1 ? "s" : ""}
+            {data.signal_count} {data.signal_count !== 1 ? "señales" : "señal"}
           </Badge>
         </div>
       </CardHeader>
@@ -64,7 +65,7 @@ export function IntelligenceCard({ data }: IntelligenceCardProps) {
           return (
             <div
               key={idx}
-              className="flex items-start gap-3 p-3 rounded-lg bg-white/80 border border-amber-100/80 shadow-sm"
+              className="flex items-start gap-3 p-3 rounded-2xl bg-white/90 border border-black/[0.05]"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100/80 text-amber-700 flex-shrink-0 mt-0.5">
                 <Icon className="h-4 w-4" />
@@ -76,7 +77,7 @@ export function IntelligenceCard({ data }: IntelligenceCardProps) {
                     variant="outline"
                     className={`text-[10px] px-1.5 py-0 ${confidenceColors[signal.confidence]}`}
                   >
-                    {signal.confidence}
+                    {translateEnum(signal.confidence)}
                   </Badge>
                   {signal.pattern_name && (
                     <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
@@ -84,7 +85,7 @@ export function IntelligenceCard({ data }: IntelligenceCardProps) {
                     </Badge>
                   )}
                   {signal.severity_score != null && signal.severity_score > 0 && (
-                    <span className="text-[10px] text-muted-foreground" title="Severity score">
+                    <span className="text-[10px] text-muted-foreground" title="Nivel de severidad">
                       {signal.severity_score}/10
                     </span>
                   )}
@@ -99,11 +100,11 @@ export function IntelligenceCard({ data }: IntelligenceCardProps) {
                     </span>
                   )}
                   <span className="text-[10px] text-muted-foreground/70">
-                    Source: {repairMojibakeText(signal.source)}
+                    Fuente: {repairMojibakeText(signal.source)}
                   </span>
                   {signal.date && (
                     <span className="text-[10px] text-muted-foreground/70">
-                      · {new Date(signal.date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                      · {new Date(signal.date).toLocaleDateString("es-SV", { month: "short", year: "numeric" })}
                     </span>
                   )}
                 </div>

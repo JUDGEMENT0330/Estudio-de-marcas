@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import {
   MapPin, Star, Globe, Cpu, Users, BookOpen, Trophy, DollarSign,
-  Brain, Lightbulb, FileText, CheckCircle2, Loader2, Radar, Rocket,
+  Brain, Lightbulb, FileText, CheckCircle2, Loader2, Rocket,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Report } from "@/lib/db/types";
@@ -24,21 +24,21 @@ interface AnalysisStep {
 }
 
 const STEPS: AnalysisStep[] = [
-  { id: "init", label: "Initializing audit", detail: "Setting up analysis pipeline and validating inputs", icon: Rocket, duration: 5000 },
-  { id: "locate", label: "Locating business", detail: "Searching Google Maps for profile and coordinates", icon: MapPin, duration: 8000 },
-  { id: "understand", label: "Understanding the business", detail: "AI building deep expertise about this business category", icon: Brain, duration: 25000 },
-  { id: "gbp", label: "Analyzing GBP profile", detail: "Checking hours, photos, attributes, and completeness", icon: MapPin, duration: 12000 },
-  { id: "reviews", label: "Scanning customer reviews", detail: "Reading review themes, sentiment, and response patterns", icon: Star, duration: 15000 },
-  { id: "website", label: "Testing website speed", detail: "Running Lighthouse audit on Core Web Vitals and SEO", icon: Globe, duration: 18000 },
-  { id: "tech", label: "Detecting tech stack", detail: "Identifying CMS, analytics, booking, and payment tools", icon: Cpu, duration: 10000 },
-  { id: "social", label: "Checking social presence", detail: "Probing Facebook, Instagram, LinkedIn, and more", icon: Users, duration: 12000 },
-  { id: "citations", label: "Verifying directory listings", detail: "Checking NAP consistency across 20+ directories", icon: BookOpen, duration: 10000 },
-  { id: "competitors", label: "Mapping real competitors", detail: "AI searching for real competitors in the same vertical", icon: Trophy, duration: 15000 },
-  { id: "revenue", label: "Calculating business impact", detail: "Estimating impact signals from identified gaps", icon: DollarSign, duration: 10000 },
-  { id: "intel", label: "Uncovering business intel", detail: "Cross-referencing corporate filings and growth signals", icon: Lightbulb, duration: 12000 },
-  { id: "ai", label: "AI deep analysis", detail: "Frontier model synthesizing all data with industry expertise", icon: Brain, duration: 60000 },
-  { id: "narrative", label: "Writing executive summary", detail: "Crafting consultant-grade narrative from analysis", icon: FileText, duration: 45000 },
-  { id: "assemble", label: "Assembling final report", detail: "Scoring, ranking recommendations, and packaging", icon: CheckCircle2, duration: 8000 },
+  { id: "init", label: "Iniciando auditoría", detail: "Preparando el flujo de análisis y validando los datos", icon: Rocket, duration: 5000 },
+  { id: "locate", label: "Ubicando el negocio", detail: "Buscando el perfil y las coordenadas en Google Maps", icon: MapPin, duration: 8000 },
+  { id: "understand", label: "Comprendiendo el negocio", detail: "La IA construye conocimiento experto sobre esta categoría", icon: Brain, duration: 25000 },
+  { id: "gbp", label: "Analizando el perfil de Google", detail: "Revisando horarios, fotos, atributos y nivel de completitud", icon: MapPin, duration: 12000 },
+  { id: "reviews", label: "Leyendo reseñas de clientes", detail: "Temas, sentimiento y patrones de respuesta", icon: Star, duration: 15000 },
+  { id: "website", label: "Midiendo velocidad del sitio", detail: "Auditoría Lighthouse de Core Web Vitals y SEO", icon: Globe, duration: 18000 },
+  { id: "tech", label: "Detectando tecnología", detail: "CMS, analítica, reservas y herramientas de pago", icon: Cpu, duration: 10000 },
+  { id: "social", label: "Revisando redes sociales", detail: "Facebook, Instagram, LinkedIn y más", icon: Users, duration: 12000 },
+  { id: "citations", label: "Verificando directorios", detail: "Consistencia de nombre, dirección y teléfono en más de 20 directorios", icon: BookOpen, duration: 10000 },
+  { id: "competitors", label: "Mapeando competidores reales", detail: "La IA busca competidores reales del mismo rubro", icon: Trophy, duration: 15000 },
+  { id: "revenue", label: "Calculando impacto en el negocio", detail: "Estimando señales de impacto a partir de las brechas", icon: DollarSign, duration: 10000 },
+  { id: "intel", label: "Buscando inteligencia comercial", detail: "Cruzando registros mercantiles y señales de crecimiento", icon: Lightbulb, duration: 12000 },
+  { id: "ai", label: "Análisis profundo con IA", detail: "Un modelo de frontera sintetiza todos los datos con criterio experto", icon: Brain, duration: 60000 },
+  { id: "narrative", label: "Redactando el resumen ejecutivo", detail: "Narrativa de nivel consultor a partir del análisis", icon: FileText, duration: 45000 },
+  { id: "assemble", label: "Armando el reporte final", detail: "Calificando, priorizando recomendaciones y empaquetando", icon: CheckCircle2, duration: 8000 },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -136,7 +136,7 @@ export function AuditLoading({ reportId, businessName, city, onComplete }: Audit
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
-    return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+    return m > 0 ? `${m} min ${sec} s` : `${sec} s`;
   };
 
   const doneCount = stepStatuses.filter((s) => s === "done").length;
@@ -147,29 +147,30 @@ export function AuditLoading({ reportId, businessName, city, onComplete }: Audit
       {/* ── Header ─────────────────────────────────────────────────── */}
       <div className="text-center mb-8">
         <div className="relative inline-flex items-center justify-center mb-4">
-          <div className="absolute h-16 w-16 rounded-full bg-primary/20 animate-ping" />
-          <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Radar className="h-8 w-8 text-primary animate-spin" style={{ animationDuration: "3s" }} />
+          <div className="absolute h-20 w-20 rounded-full bg-primary/10 motion-safe:animate-ping" style={{ animationDuration: "2.4s" }} />
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-[28px] bg-white shadow-raised">
+            <img src="/brand/escudo.png" alt="" className="h-12 w-12" />
           </div>
         </div>
-        <h2 className="text-2xl font-bold tracking-tight">
-          Analyzing {businessName}
+        <p className="eyebrow text-brand-gold">Auditoría en curso</p>
+        <h2 className="mt-1 text-[28px] font-semibold">
+          Analizando {businessName}
         </h2>
         {city && (
           <p className="text-muted-foreground mt-1">{city}</p>
         )}
         <div className="flex items-center justify-center gap-4 mt-3">
           <Badge variant="secondary" className="tabular-nums">
-            {formatTime(elapsed)} elapsed
+            {formatTime(elapsed)} transcurridos
           </Badge>
           {!reportReady && (
             <Badge variant="outline" className="tabular-nums">
-              {progress}% complete
+              {progress}% completado
             </Badge>
           )}
           {reportReady && (
             <Badge className="bg-green-100 text-green-800">
-              Report ready
+              Reporte listo
             </Badge>
           )}
         </div>
@@ -178,7 +179,7 @@ export function AuditLoading({ reportId, businessName, city, onComplete }: Audit
       {/* ── Progress bar ───────────────────────────────────────────── */}
       <div className="h-1.5 rounded-full bg-secondary mb-8 overflow-hidden">
         <div
-          className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
+          className="h-full rounded-full bg-gradient-to-r from-brand-navy to-brand-blue transition-[width] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]"
           style={{ width: `${reportReady ? 100 : progress}%` }}
         />
       </div>
@@ -192,7 +193,7 @@ export function AuditLoading({ reportId, businessName, city, onComplete }: Audit
           return (
             <div
               key={step.id}
-              className={`flex items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-500 ${status === "active"
+              className={`flex items-center gap-3 rounded-xl px-4 py-2.5 transition-[opacity,background-color] duration-500 ${status === "active"
                   ? "bg-primary/5 border border-primary/20"
                   : status === "done"
                     ? "opacity-60"
@@ -240,7 +241,7 @@ export function AuditLoading({ reportId, businessName, city, onComplete }: Audit
       {/* ── Footer tip ─────────────────────────────────────────────── */}
       {!reportReady && (
         <p className="text-center text-xs text-muted-foreground mt-8">
-          Deep audits typically take 4&ndash;6 minutes. Our AI is researching your business, analyzing competitors, and writing a consultant-grade report. You can leave this page &mdash; we&apos;ll save the report.
+          Una auditoría profunda suele tardar de 4 a 6 minutos. La IA investiga el negocio, analiza competidores y redacta un reporte de nivel consultor. Puedes salir de esta página: el reporte se guardará.
         </p>
       )}
     </div>

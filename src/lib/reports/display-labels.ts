@@ -93,3 +93,40 @@ export function priorityPlanSubtitle(showRevenueDollars: boolean): string {
 
   return "Acciones secuenciadas por impacto esperado en el negocio y facilidad de ejecución.";
 }
+
+/** Traduce valores enumerados que llegan en inglés desde los colectores. */
+const ENUM_ES: Record<string, string> = {
+  leader: "Líder",
+  challenger: "Retador",
+  laggard: "Rezagado",
+  follower: "Seguidor",
+  critical: "Crítico",
+  high: "Alto",
+  medium: "Medio",
+  low: "Bajo",
+  improving: "Mejorando",
+  declining: "Bajando",
+  stable: "Estable",
+  unknown: "Desconocido",
+  directional: "Orientativa",
+  qualitative: "Cualitativo",
+  significant: "Significativo",
+  moderate: "Moderado",
+  minimal: "Mínimo",
+  severe: "Severo",
+  quick_win: "Victoria rápida",
+  strategic: "Estratégico",
+  positive: "Positivo",
+  negative: "Negativo",
+  neutral: "Neutral",
+};
+
+export function translateEnum(value: string | undefined | null): string {
+  if (!value) return "";
+  const key = value.trim().toLowerCase();
+  if (ENUM_ES[key]) return ENUM_ES[key];
+  const spaced = key.replace(/_/g, " ");
+  const multi = key.split(/[_\s]+/).map((part) => ENUM_ES[part] ?? part).join(" ");
+  const result = multi !== spaced ? multi : spaced;
+  return result.charAt(0).toUpperCase() + result.slice(1);
+}

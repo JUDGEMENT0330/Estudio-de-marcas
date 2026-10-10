@@ -68,7 +68,7 @@ export default function NewAuditPage() {
             label: s.name,
             sublabel: [
               s.address,
-              s.rating ? `${s.rating}★ (${s.reviewCount || 0} reviews)` : null,
+              s.rating ? `${s.rating}★ (${s.reviewCount || 0} reseñas)` : null,
               s.category,
             ]
               .filter(Boolean)
@@ -193,31 +193,33 @@ export default function NewAuditPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">New Business Audit</h1>
-        <p className="text-muted-foreground mt-1">
-          Start typing a business name — we&apos;ll find it on Google Maps and auto-fill the details.
+        <p className="eyebrow text-brand-gold">Nueva auditoría</p>
+        <h1 className="mt-1 text-[34px] font-semibold text-foreground sm:text-[40px]">
+          ¿Qué negocio analizamos?
+        </h1>
+        <p className="mt-2 text-[15px] text-muted-foreground">
+          Escribe el nombre del negocio: lo buscamos en Google Maps y completamos los datos automáticamente.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Business Details</CardTitle>
+          <CardTitle>Datos del negocio</CardTitle>
           <CardDescription>
-            Search for a business or enter details manually. The more info you provide, the better the audit.
+            Busca el negocio o ingresa los datos manualmente. Mientras más información, mejor la auditoría.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Business Name — Autocomplete */}
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none" htmlFor="businessName">
-                Business Name <span className="text-destructive">*</span>
+              <label className="text-[13px] font-medium text-foreground/80" htmlFor="businessName">
+                Nombre del negocio <span className="text-destructive">*</span>
               </label>
               <AutocompleteInput
                 id="businessName"
-                placeholder="Start typing a business name..."
+                placeholder="Empieza a escribir el nombre del negocio…"
                 value={formData.businessName}
                 onChange={(val) => setFormData({ ...formData, businessName: val })}
                 onSelect={handleBusinessSelect}
@@ -227,20 +229,19 @@ export default function NewAuditPage() {
                 debounceMs={350}
                 minChars={2}
               />
-              <p className="text-xs text-muted-foreground">
-                Select a result to auto-fill city, state, and website.
+              <p className="text-[12px] text-muted-foreground">
+                Selecciona un resultado para completar ciudad, departamento/estado y sitio web.
               </p>
             </div>
 
-            {/* City + State */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-sm font-medium leading-none" htmlFor="city">
-                  City
+                <label className="text-[13px] font-medium text-foreground/80" htmlFor="city">
+                  Ciudad
                 </label>
                 <AutocompleteInput
                   id="city"
-                  placeholder="e.g., Seattle"
+                  placeholder="Ej.: San Salvador"
                   value={formData.city}
                   onChange={(val) => setFormData({ ...formData, city: val })}
                   onSelect={handleCitySelect}
@@ -251,29 +252,28 @@ export default function NewAuditPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium leading-none" htmlFor="state">
-                  State
+                <label className="text-[13px] font-medium text-foreground/80" htmlFor="state">
+                  Departamento / Estado
                 </label>
                 <Input
                   id="state"
-                  placeholder="e.g., WA"
+                  placeholder="Ej.: San Salvador"
                   value={formData.state}
                   onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                 />
               </div>
             </div>
 
-            {/* Website URL */}
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none" htmlFor="url">
-                Website URL <span className="text-muted-foreground text-xs">(auto-filled or enter manually)</span>
+              <label className="text-[13px] font-medium text-foreground/80" htmlFor="url">
+                Sitio web <span className="text-[12px] font-normal text-muted-foreground">(automático o manual)</span>
               </label>
               <div className="relative">
-                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Globe className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="url"
                   type="url"
-                  placeholder="https://example.com"
+                  placeholder="https://ejemplo.com"
                   className="pl-10"
                   value={formData.url}
                   onChange={(e) => setFormData({ ...formData, url: e.target.value })}
@@ -281,17 +281,16 @@ export default function NewAuditPage() {
               </div>
             </div>
 
-            {/* Custom Direction */}
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none" htmlFor="customDirection">
-                Custom Research Direction <span className="text-muted-foreground text-xs">(Pro/Agency)</span>
+              <label className="text-[13px] font-medium text-foreground/80" htmlFor="customDirection">
+                Enfoque de investigación <span className="text-[12px] font-normal text-muted-foreground">(opcional)</span>
               </label>
               <div className="relative">
-                <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <MessageSquare className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground" />
                 <textarea
                   id="customDirection"
-                  placeholder="e.g., Focus on their hiring patterns and growth signals..."
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent pl-10 pr-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="Ej.: Enfócate en su posicionamiento frente a perfumerías de nicho en El Salvador…"
+                  className="flex min-h-[96px] w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-3.5 text-[15px] placeholder:text-muted-foreground/80 transition-[border-color,box-shadow] duration-150 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15"
                   value={formData.customDirection}
                   onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                     setFormData({ ...formData, customDirection: e.target.value })
@@ -300,32 +299,28 @@ export default function NewAuditPage() {
               </div>
             </div>
 
-            {/* Auto-filled preview */}
             {(formData.city || formData.url) && formData.businessName && (
-              <div className="rounded-lg bg-secondary/30 p-4 text-sm space-y-1">
-                <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-2">
-                  Auto-filled Details
-                </p>
+              <div className="animate-fade-in-up space-y-1 rounded-2xl bg-brand-sky/40 p-4 text-[14px]">
+                <p className="eyebrow mb-2 text-brand-navy/70">Datos detectados</p>
                 {formData.businessName && (
-                  <p><span className="text-muted-foreground">Business:</span> {formData.businessName}</p>
+                  <p><span className="text-muted-foreground">Negocio:</span> {formData.businessName}</p>
                 )}
                 {formData.city && (
-                  <p><span className="text-muted-foreground">Location:</span> {formData.city}{formData.state ? `, ${formData.state}` : ""}</p>
+                  <p><span className="text-muted-foreground">Ubicación:</span> {formData.city}{formData.state ? `, ${formData.state}` : ""}</p>
                 )}
                 {formData.url && (
-                  <p><span className="text-muted-foreground">Website:</span> {formData.url}</p>
+                  <p className="truncate"><span className="text-muted-foreground">Sitio web:</span> {formData.url}</p>
                 )}
               </div>
             )}
 
-            {/* Submit */}
             <Button type="submit" className="w-full" size="lg" disabled={!formData.businessName.trim()}>
-              <Search className="mr-2 h-4 w-4" />
-              Run Business Audit
+              <Search className="h-4 w-4" />
+              Iniciar auditoría
             </Button>
 
-            <p className="text-xs text-center text-muted-foreground">
-              Uses 1 audit credit. Powered by Google Places and AI analysis.
+            <p className="text-center text-[12px] text-muted-foreground">
+              Datos de Google Places, PageSpeed y fuentes públicas · Análisis estratégico con IA
             </p>
           </form>
         </CardContent>

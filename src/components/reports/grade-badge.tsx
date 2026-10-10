@@ -1,40 +1,21 @@
 import { cn } from "@/lib/utils";
+import { gradeLevel, localizeGrade, type GradeLevel } from "@/lib/reports/display-labels";
 
 // ---------------------------------------------------------------------------
 // Color mapping for both legacy single-letter grades AND new descriptive labels
 // ---------------------------------------------------------------------------
 
-/** Map a grade string to its color classes */
-function getGradeColors(grade: string): string {
-  // Legacy single-letter grades
-  const letterColors: Record<string, string> = {
-    A: "bg-green-100 text-green-800 border-green-200",
-    B: "bg-blue-100 text-blue-800 border-blue-200",
-    C: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    D: "bg-orange-100 text-orange-800 border-orange-200",
-    F: "bg-red-100 text-red-800 border-red-200",
-  };
+const LEVEL_COLORS: Record<GradeLevel, string> = {
+  excellent: "bg-emerald-50 text-emerald-800 border-emerald-200/70",
+  good: "bg-sky-50 text-brand-navy border-sky-200/70",
+  developing: "bg-amber-50 text-amber-800 border-amber-200/70",
+  needs_attention: "bg-orange-50 text-orange-800 border-orange-200/70",
+  unknown: "bg-secondary text-foreground border-border",
+};
 
-  // Direct letter match
-  if (letterColors[grade]) return letterColors[grade];
-
-  // Context-aware label matching (from scoring.ts)
-  const g = grade.toLowerCase();
-  if (g.includes("strong") || g.includes("excellent") || g.includes("leading") || g.includes("leader")) {
-    return "bg-green-100 text-green-800 border-green-200";
-  }
-  if (g.includes("solid") || g.includes("good") || g.includes("well positioned") || g.includes("competitive")) {
-    return "bg-blue-100 text-blue-800 border-blue-200";
-  }
-  if (g.includes("developing") || g.includes("emerging") || g.includes("growing") || g.includes("building")) {
-    return "bg-yellow-100 text-yellow-800 border-yellow-200";
-  }
-  if (g.includes("needs") || g.includes("attention") || g.includes("opportunity") || g.includes("lagging")) {
-    return "bg-orange-100 text-orange-800 border-orange-200";
-  }
-
-  // Fallback: use score-based coloring if available, otherwise neutral
-  return "bg-slate-100 text-slate-800 border-slate-200";
+/** Map a grade string (EN o ES) to its color classes */
+function getGradeColors(grade: string, score?: number): string {
+  return LEVEL_COLORS[gradeLevel(grade, score)];
 }
 
 /** Check if grade is a single character (legacy A-F) */
@@ -69,15 +50,15 @@ export function GradeBadge({ grade, score, size = "md", showScore = true }: Grad
       <div className="flex items-center gap-2">
         <div
           className={cn(
-            "flex items-center justify-center rounded-lg border-2 font-bold flex-shrink-0",
+            "flex items-center justify-center rounded-2xl border font-semibold flex-shrink-0",
             sizeClasses[size],
-            getGradeColors(grade)
+            getGradeColors(grade, score)
           )}
         >
           {grade}
         </div>
         {showScore && score !== undefined && (
-          <span className="text-sm text-muted-foreground">{score}/100</span>
+          <span className="text-sm tabular-nums text-muted-foreground">{score}/100</span>
         )}
       </div>
     );
@@ -94,15 +75,15 @@ export function GradeBadge({ grade, score, size = "md", showScore = true }: Grad
     <div className="flex items-center gap-2">
       <div
         className={cn(
-          "flex items-center justify-center rounded-lg border-2 font-semibold whitespace-nowrap flex-shrink-0",
+          "flex items-center justify-center rounded-full border font-medium whitespace-nowrap flex-shrink-0",
           labelSizeClasses[size],
-          getGradeColors(grade)
+          getGradeColors(grade, score)
         )}
       >
-        {grade}
+        {localizeGrade(grade)}
       </div>
       {showScore && score !== undefined && (
-        <span className="text-sm text-muted-foreground">{score}/100</span>
+        <span className="text-sm tabular-nums text-muted-foreground">{score}/100</span>
       )}
     </div>
   );

@@ -48,13 +48,13 @@ export function RunAuditDialog({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to start audit");
+        throw new Error(data.error || "No se pudo iniciar la auditoría");
       }
 
       const data = await res.json();
       router.push(`/audits/${data.reportId}`);
     } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : "Failed to start audit");
+      setErrorMsg(err instanceof Error ? err.message : "No se pudo iniciar la auditoría");
       setState("error");
     }
   }, [businessName, city, router]);
@@ -75,16 +75,16 @@ export function RunAuditDialog({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-blue-600" />
-                Run Full Audit
+                Ejecutar auditoría completa
               </DialogTitle>
               <DialogDescription>
-                Start an 8-module local intelligence run for this business.
+                Inicia un análisis de inteligencia de 8 módulos para este negocio.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <p className="text-sm text-slate-500 mb-0.5">Business</p>
+                <p className="text-sm text-slate-500 mb-0.5">Negocio</p>
                 <p className="font-semibold text-slate-900">{businessName}</p>
                 <p className="text-xs text-slate-500">{city}</p>
               </div>
@@ -93,10 +93,10 @@ export function RunAuditDialog({
                 <Zap className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-blue-900">
-                    Local workspace run
+                    Ejecución en tu espacio de trabajo
                   </p>
                   <p className="text-xs text-blue-700 mt-0.5">
-                    No subscription, billing account, or credits are required.
+                    No requiere suscripción, cuenta de facturación ni créditos.
                   </p>
                 </div>
               </div>
@@ -104,11 +104,11 @@ export function RunAuditDialog({
 
             <DialogFooter>
               <Button variant="outline" onClick={() => closeDialog(false)}>
-                Cancel
+                Cancelar
               </Button>
               <Button onClick={startAudit} className="gap-1.5">
                 <Zap className="h-4 w-4" />
-                Start Audit
+                Iniciar auditoría
               </Button>
             </DialogFooter>
           </>
@@ -119,10 +119,10 @@ export function RunAuditDialog({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                Starting Audit
+                Iniciando auditoría
               </DialogTitle>
               <DialogDescription>
-                Setting up the intelligence pipeline for {businessName}...
+                Preparando el análisis de inteligencia para {businessName}…
               </DialogDescription>
             </DialogHeader>
             <div className="flex justify-center py-8">
@@ -136,15 +136,15 @@ export function RunAuditDialog({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-red-700">
                 <AlertTriangle className="h-5 w-5" />
-                Something went wrong
+                Algo salió mal
               </DialogTitle>
               <DialogDescription>{errorMsg}</DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => closeDialog(false)}>
-                Close
+                Cerrar
               </Button>
-              <Button onClick={startAudit}>Retry</Button>
+              <Button onClick={startAudit}>Reintentar</Button>
             </DialogFooter>
           </>
         )}

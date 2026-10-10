@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AgentResearchFinding, BusinessEnrichmentFact, BusinessEnrichmentResult } from "@/lib/db/types";
 import { visibleCollectionNotes } from "@/lib/reports/enrichment-display";
+import { translateEnum } from "@/lib/reports/display-labels";
 
 function confidenceClass(confidence: "high" | "medium" | "low"): string {
   if (confidence === "high") return "border-emerald-200 bg-emerald-50 text-emerald-700";
@@ -28,7 +29,7 @@ function SourceBadge({ source }: { source: { label: string; url?: string } }) {
 
 function FactRow({ fact }: { fact: BusinessEnrichmentFact }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+    <div className="rounded-2xl bg-secondary/60 px-4 py-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p className="text-sm font-medium text-slate-900">{fact.label}</p>
@@ -37,7 +38,7 @@ function FactRow({ fact }: { fact: BusinessEnrichmentFact }) {
         <div className="flex flex-wrap gap-2">
           <SourceBadge source={fact.source} />
           <Badge variant="outline" className={confidenceClass(fact.confidence)}>
-            {fact.confidence} confidence
+            Confianza {translateEnum(fact.confidence).toLowerCase()}
           </Badge>
         </div>
       </div>
@@ -49,15 +50,15 @@ function FactRow({ fact }: { fact: BusinessEnrichmentFact }) {
 
 function ResearchRow({ finding }: { finding: AgentResearchFinding }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+    <div className="rounded-2xl bg-secondary/60 px-4 py-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <p className="max-w-2xl text-sm font-medium text-slate-900">{finding.claim}</p>
         <div className="flex flex-wrap gap-2">
           <SourceBadge source={finding.source} />
           <Badge variant="outline" className={confidenceClass(finding.confidence)}>
-            {finding.confidence} confidence
+            Confianza {translateEnum(finding.confidence).toLowerCase()}
           </Badge>
-          {finding.verified_status === "inferred" && <Badge variant="outline">inferred</Badge>}
+          {finding.verified_status === "inferred" && <Badge variant="outline">inferido</Badge>}
         </div>
       </div>
       {finding.evidence_excerpt && (
@@ -82,16 +83,16 @@ export function BusinessContextCard({ enrichment }: { enrichment?: BusinessEnric
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <SearchCheck className="h-5 w-5 text-emerald-600" />
-          Business & Market Context
+          Contexto de negocio y mercado
         </CardTitle>
         <CardDescription>
-          Public facts and cited research collected to sharpen this audit.
+          Datos públicos e investigación citada que enriquecen esta auditoría.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {enrichment.facts.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Public Facts</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Datos públicos</p>
             <div className="grid gap-2 md:grid-cols-2">
               {enrichment.facts.slice(0, 8).map((fact) => (
                 <FactRow key={fact.id} fact={fact} />
@@ -102,7 +103,7 @@ export function BusinessContextCard({ enrichment }: { enrichment?: BusinessEnric
 
         {enrichment.research_findings.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Cited Research</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Investigación citada</p>
             <div className="grid gap-2">
               {enrichment.research_findings.slice(0, 5).map((finding) => (
                 <ResearchRow key={`${finding.source.url ?? finding.source.label}-${finding.claim}`} finding={finding} />
@@ -113,7 +114,7 @@ export function BusinessContextCard({ enrichment }: { enrichment?: BusinessEnric
 
         {collectionNotes.length > 0 && (
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Collection Notes</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Notas de recopilación</p>
             <ul className="mt-2 space-y-1 text-sm text-slate-600">
               {collectionNotes.map((note) => (
                 <li key={note}>{note}</li>

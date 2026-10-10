@@ -342,20 +342,20 @@ describe("report content quality guardrails", () => {
 
     expect(coverage.counts).toEqual({ checked: 1, sampled: 5, notChecked: 1 });
     expect(coverage.confidence.label).toBe("Directional");
-    expect(labels).toContain("Google profile");
-    expect(labels).toContain("Reviews");
-    expect(labels).toContain("Website");
-    expect(labels).toContain("Directories");
-    expect(coverage.items.find((item) => item.label === "Reviews")).toMatchObject({
+    expect(labels).toContain("Perfil de Google");
+    expect(labels).toContain("Reseñas");
+    expect(labels).toContain("Sitio web");
+    expect(labels).toContain("Directorios");
+    expect(coverage.items.find((item) => item.label === "Reseñas")).toMatchObject({
       coverage: "sampled",
       confidence: "medium",
     });
-    expect(coverage.items.find((item) => item.label === "Website")?.detail).toMatch(/snapshot/i);
-    expect(coverage.items.find((item) => item.label === "Directories")).toMatchObject({
+    expect(coverage.items.find((item) => item.label === "Sitio web")?.detail).toMatch(/snapshot/i);
+    expect(coverage.items.find((item) => item.label === "Directorios")).toMatchObject({
       coverage: "not_checked",
       confidence: "low",
     });
-    expect(text).toMatch(/sample|snapshot|not available/i);
+    expect(text).toMatch(/sample|snapshot|muestra|instantánea|no disponible/i);
     expect(text).not.toMatch(/\bfull\b|\bexhaustive\b|\bcomplete check\b/i);
   });
 
@@ -419,12 +419,12 @@ describe("report content quality guardrails", () => {
     });
 
     const coverage = buildAuditCoverageSummary(result);
-    const businessContext = coverage.items.find((item) => item.label === "Business context");
+    const businessContext = coverage.items.find((item) => item.label === "Contexto del negocio");
 
     expect(businessContext).toMatchObject({
       coverage: "sampled",
       confidence: "medium",
     });
-    expect(businessContext?.detail).toMatch(/public facts/i);
+    expect(businessContext?.detail).toMatch(/datos públicos/i);
   });
 });

@@ -24,7 +24,13 @@ import {
   stripDollarClaims,
   visibleRevenueFindings,
 } from "@/lib/reports/revenue-display";
-import { humanizeModuleKey, humanizeModuleReferences } from "@/lib/reports/display-labels";
+import {
+  gradeLevel,
+  humanizeModuleKey,
+  humanizeModuleReferences,
+  localizeGrade,
+  translateEnum,
+} from "@/lib/reports/display-labels";
 import {
   MapPin, Star, Globe, Cpu, Users, BookOpen, Trophy, DollarSign,
   Loader2, AlertCircle, ArrowLeft, Download, Share2, CheckCircle2, XCircle,
@@ -35,15 +41,15 @@ import Link from "next/link";
 import type { Report, AuditResult, AuditInput, Recommendation } from "@/lib/db/types";
 
 function formatCurrency(n: number): string {
-  return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  return "$" + n.toLocaleString("es-SV", { maximumFractionDigits: 0 });
 }
 
 /** Maps overall score to an interpretability tier label + color */
 function getScoreTier(score: number): { label: string; color: string } {
-  if (score >= 85) return { label: "Top Tier", color: "text-emerald-400" };
-  if (score >= 70) return { label: "Competitive", color: "text-blue-300" };
-  if (score >= 55) return { label: "At Risk", color: "text-amber-300" };
-  return { label: "Critical", color: "text-red-400" };
+  if (score >= 85) return { label: "Nivel superior", color: "text-emerald-300" };
+  if (score >= 70) return { label: "Competitivo", color: "text-sky-200" };
+  if (score >= 55) return { label: "En riesgo", color: "text-amber-200" };
+  return { label: "Crítico", color: "text-red-300" };
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -99,30 +105,26 @@ function getModuleContent(
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 const moduleGradesMeta: { key: keyof ReportScores["module_grades"]; label: string; icon: typeof MapPin }[] = [
-  { key: "gbp_health", label: "GBP", icon: MapPin },
-  { key: "review_sentiment", label: "Reviews", icon: Star },
-  { key: "website_performance", label: "Website", icon: Globe },
-  { key: "tech_stack", label: "Tech", icon: Cpu },
-  { key: "social_presence", label: "Social", icon: Users },
-  { key: "citation_consistency", label: "Citations", icon: BookOpen },
-  { key: "competitive_position", label: "Compete", icon: Trophy },
-  { key: "revenue_impact", label: "Revenue", icon: DollarSign },
+  { key: "gbp_health", label: "Google", icon: MapPin },
+  { key: "review_sentiment", label: "Reseñas", icon: Star },
+  { key: "website_performance", label: "Sitio web", icon: Globe },
+  { key: "tech_stack", label: "Tecnología", icon: Cpu },
+  { key: "social_presence", label: "Redes", icon: Users },
+  { key: "citation_consistency", label: "Directorios", icon: BookOpen },
+  { key: "competitive_position", label: "Competencia", icon: Trophy },
+  { key: "revenue_impact", label: "Ingresos", icon: DollarSign },
 ];
 
-/** Module grade badge colors — used on the dark purple hero, so these use bright text on translucent bg. */
-const gradeColor: Record<string, string> = {
-  // New context-aware grade labels
-  Strong: "bg-green-500/20 text-green-300 border-green-400/30",
-  Solid: "bg-blue-500/20 text-blue-300 border-blue-400/30",
-  Developing: "bg-yellow-500/20 text-yellow-300 border-yellow-400/30",
-  "Needs Attention": "bg-orange-500/20 text-orange-300 border-orange-400/30",
-  // Legacy A-F grades
-  A: "bg-green-500/20 text-green-300 border-green-400/30",
-  B: "bg-blue-500/20 text-blue-300 border-blue-400/30",
-  C: "bg-yellow-500/20 text-yellow-300 border-yellow-400/30",
-  D: "bg-orange-500/20 text-orange-300 border-orange-400/30",
-  F: "bg-red-500/20 text-red-300 border-red-400/30",
+/** Colores de calificación sobre el encabezado azul marino (texto claro sobre fondo translúcido). */
+const gradeColorByLevel: Record<string, string> = {
+  excellent: "bg-emerald-400/15 text-emerald-200 border-emerald-300/25",
+  good: "bg-sky-400/15 text-sky-100 border-sky-300/25",
+  developing: "bg-amber-400/15 text-amber-100 border-amber-300/25",
+  needs_attention: "bg-orange-400/15 text-orange-100 border-orange-300/25",
+  unknown: "bg-white/10 text-white/80 border-white/20",
 };
+
+const gradeColor = (grade: string) => gradeColorByLevel[gradeLevel(grade)];
 
 // Removed boldNumbers helper as per user request to drop highlight splitting
 
@@ -141,17 +143,19 @@ function ExecutiveSummarySection({ scores, result }: { scores: ReportScores; res
   const showRevenueDollars = shouldShowRevenueDollars(result.revenue_impact);
 
   return (
-    <Card className="overflow-hidden border-0 shadow-lg">
+    <Card className="overflow-hidden border-0 shadow-raised">
       {/* ── Hero bar: Score ring + verdict + module grades ─────────────── */}
-      <div className="bg-[#4d3399] border-b border-[#3e297a] text-white px-6 py-8">
-        <div className="flex flex-col md:flex-row items-center gap-8">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#16294a] via-brand-navy to-[#24508a] px-6 py-9 text-white sm:px-8">
+        <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-blue/30 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-brand-gold/15 blur-3xl" />
+        <div className="relative flex flex-col items-center gap-8 md:flex-row">
           {/* Score ring */}
           <div className="flex-shrink-0 text-center">
             <ScoreRing score={scores.overall_score} grade={scores.overall_grade} size={150} variant="dark" />
             {(() => {
               const tier = getScoreTier(scores.overall_score);
               return (
-                <p className={`text-xs font-semibold tracking-widest uppercase mt-2 ${tier.color}`}>
+                <p className={`eyebrow mt-2 ${tier.color}`}>
                   {tier.label}
                 </p>
               );
@@ -159,11 +163,11 @@ function ExecutiveSummarySection({ scores, result }: { scores: ReportScores; res
           </div>
 
           <div className="flex-1 text-center md:text-left">
-            <h2 className="text-xl font-bold tracking-tight mb-1 animate-fade-in-up text-white">
-              {s?.verdict_headline || "Overall Executive Summary & Score"}
+            <h2 className="mb-1.5 animate-fade-in-up text-[22px] font-semibold text-white sm:text-[26px]">
+              {s?.verdict_headline || "Resumen ejecutivo y calificación general"}
             </h2>
             {s && (
-              <p className="text-purple-100 text-sm leading-relaxed max-w-xl animate-fade-in-up stagger-1">
+              <p className="max-w-xl animate-fade-in-up text-[15px] leading-relaxed text-white/75 stagger-1">
                 {s.verdict_subline || s.verdict_context || ""}
               </p>
             )}
@@ -173,15 +177,15 @@ function ExecutiveSummarySection({ scores, result }: { scores: ReportScores; res
               {moduleGradesMeta.map(({ key, label, icon: Icon }) => {
                 const grade = scores.module_grades[key];
                 if (!grade) return null;
-                const displayLabel = key === "revenue_impact" && !showRevenueDollars ? "Impact" : label;
+                const displayLabel = key === "revenue_impact" && !showRevenueDollars ? "Impacto" : label;
                 return (
                   <div
                     key={key}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${gradeColor[grade] || gradeColor.F}`}
+                    className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${gradeColor(grade)}`}
                   >
                     <Icon className="h-3 w-3" />
                     <span>{displayLabel}</span>
-                    <span className="font-bold">{grade}</span>
+                    <span className="font-semibold">{localizeGrade(grade)}</span>
                   </div>
                 );
               })}
@@ -191,13 +195,13 @@ function ExecutiveSummarySection({ scores, result }: { scores: ReportScores; res
           {/* ── Revenue impact callout (right side) ────────────────────── */}
           {showRevenueDollars && revMid && revMid > 0 && (
             <div className="flex-shrink-0 text-center bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-6 py-4 animate-fade-in-up stagger-3">
-              <p className="text-xs text-white/60 font-medium uppercase tracking-wider mb-1">Est. Revenue Leak</p>
+              <p className="eyebrow mb-1 text-white/60">Fuga estimada de ingresos</p>
               <p className="text-3xl font-bold text-amber-300 tracking-tight">
                 {formatCurrency(revMid)}
-                <span className="text-sm font-normal text-amber-300/70">/mo</span>
+                <span className="text-sm font-normal text-amber-300/70">/mes</span>
               </p>
               {revAnnual && (
-                <p className="text-xs text-white/50 mt-1">~{formatCurrency(revAnnual)} annually</p>
+                <p className="text-xs text-white/50 mt-1">~{formatCurrency(revAnnual)} al año</p>
               )}
             </div>
           )}
@@ -215,7 +219,7 @@ function ExecutiveSummarySection({ scores, result }: { scores: ReportScores; res
               return (
                 <div className="animate-fade-in-up stagger-1">
                   <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                    <Activity className="h-3.5 w-3.5" /> Key Metrics at a Glance
+                    <Activity className="h-3.5 w-3.5" /> Métricas clave
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                     {statsData.map((dp: any, i: number) => (
@@ -251,7 +255,7 @@ function ExecutiveSummarySection({ scores, result }: { scores: ReportScores; res
               return (
                 <div className="animate-fade-in-up stagger-2">
                   <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                    <FileText className="h-3.5 w-3.5" /> What the Data Reveals
+                    <FileText className="h-3.5 w-3.5" /> Lo que revelan los datos
                   </h3>
                   <div className="space-y-2.5">
                     {insights.map((paragraph: string, i: number) => (
@@ -275,7 +279,7 @@ function ExecutiveSummarySection({ scores, result }: { scores: ReportScores; res
               return (
                 <div className="animate-fade-in-up stagger-3">
                   <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                    <Zap className="h-3.5 w-3.5" /> Strengths & Weaknesses
+                    <Zap className="h-3.5 w-3.5" /> Fortalezas y debilidades
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {strength && (
@@ -284,7 +288,7 @@ function ExecutiveSummarySection({ scores, result }: { scores: ReportScores; res
                           <TrendingUp className="h-5 w-5 text-emerald-600" />
                         </div>
                         <div>
-                          <div className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider">Top Strength</div>
+                          <div className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider">Principal fortaleza</div>
                           <h4 className="font-semibold text-slate-900 mt-0.5">
                             {humanizeModuleKey(strength.module)}
                             {((strength as any).headline || (strength as any).metric) && (
@@ -304,7 +308,7 @@ function ExecutiveSummarySection({ scores, result }: { scores: ReportScores; res
                           <AlertOctagon className="h-5 w-5 text-rose-600" />
                         </div>
                         <div>
-                          <div className="text-[11px] font-semibold text-rose-600 uppercase tracking-wider">Critical Gap</div>
+                          <div className="text-[11px] font-semibold text-rose-600 uppercase tracking-wider">Brecha crítica</div>
                           <h4 className="font-semibold text-slate-900 mt-0.5">
                             {humanizeModuleKey((gap as any).module)}
                             {((gap as any).headline || (gap as any).metric) && (
@@ -327,7 +331,7 @@ function ExecutiveSummarySection({ scores, result }: { scores: ReportScores; res
               {s.hidden_opportunity && (
                 <div className="lg:col-span-2">
                   <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Hidden Opportunity
+                    <Sparkles className="h-3.5 w-3.5 text-brand-gold" /> Oportunidad oculta
                   </h3>
                   <div className="text-sm text-slate-600 leading-relaxed bg-amber-50/60 border border-amber-200/50 p-4 rounded-xl">
                     <div className="flex gap-3 items-start">
@@ -340,7 +344,7 @@ function ExecutiveSummarySection({ scores, result }: { scores: ReportScores; res
               {Array.isArray(s.path_forward) && s.path_forward.length > 0 && (
                 <div className={s.hidden_opportunity ? "lg:col-span-3" : "lg:col-span-5"}>
                   <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                    <Target className="h-3.5 w-3.5 text-blue-500" /> Recommended Next Steps
+                    <Target className="h-3.5 w-3.5 text-brand-blue" /> Próximos pasos recomendados
                   </h3>
                   <div className="space-y-2.5">
                     {s.path_forward.map((step, i) => (
@@ -414,27 +418,27 @@ const evidenceStatusMeta: Record<
   }
 > = {
   collected: {
-    label: "Collected",
+    label: "Recopilado",
     className: "border-emerald-200 bg-emerald-50 text-emerald-700",
     icon: CheckCircle2,
   },
   unavailable: {
-    label: "Needs setup",
+    label: "Requiere configuración",
     className: "border-amber-200 bg-amber-50 text-amber-700",
     icon: AlertCircle,
   },
   skipped: {
-    label: "Skipped",
+    label: "Omitido",
     className: "border-slate-200 bg-slate-50 text-slate-600",
     icon: Activity,
   },
   failed: {
-    label: "Failed",
+    label: "Falló",
     className: "border-red-200 bg-red-50 text-red-700",
     icon: XCircle,
   },
   not_implemented: {
-    label: "Local gap",
+    label: "No disponible",
     className: "border-zinc-200 bg-zinc-50 text-zinc-700",
     icon: AlertOctagon,
   },
@@ -444,10 +448,10 @@ function formatEvidenceReason(reason: string): string {
   const clean = repairMojibakeText(reason);
 
   if (/collected real data for this module/i.test(clean)) {
-    return "Collected real data for this area.";
+    return "Se recopilaron datos reales para esta área.";
   }
   if (/citation consistency is not implemented/i.test(clean)) {
-    return "Directory scan is not available in the local app yet.";
+    return "El escaneo de directorios aún no está disponible.";
   }
 
   return clean
@@ -458,20 +462,20 @@ function formatEvidenceReason(reason: string): string {
 
 function formatEvidenceModuleReason(module: EvidenceModuleRow): string {
   if (module.status === "not_implemented" && module.key === "citation_consistency") {
-    return "Directory scan is not available in the local app yet.";
+    return "El escaneo de directorios aún no está disponible.";
   }
 
   if (module.status === "collected") {
     const collectedCopy: Partial<Record<EvidenceModuleRow["key"], string>> = {
-      gbp_health: "Checked current Google profile fields through Google Places.",
-      review_sentiment: "Checked review metrics and sampled visible review themes.",
-      website_performance: "Checked one mobile PageSpeed snapshot for the available URL.",
-      tech_stack: "Checked homepage HTML and visible technology signals.",
-      social_presence: "Checked website-linked social profiles and visible activity signals.",
-      competitive_comparison: "Checked a nearby competitor sample; peer relevance may vary.",
-      revenue_impact: "Checked qualitative business-impact signals from collected digital gaps.",
-      business_intelligence: "Checked local business signals from configured local probes.",
-      business_enrichment: "Checked public facts and cited research for business context.",
+      gbp_health: "Se revisaron los campos actuales del perfil de Google mediante Google Places.",
+      review_sentiment: "Se revisaron métricas de reseñas y una muestra de temas visibles.",
+      website_performance: "Se tomó una medición móvil de PageSpeed para la URL disponible.",
+      tech_stack: "Se revisó el HTML de la página principal y señales tecnológicas visibles.",
+      social_presence: "Se revisaron perfiles sociales enlazados desde el sitio y su actividad visible.",
+      competitive_comparison: "Se revisó una muestra de competidores cercanos; la relevancia puede variar.",
+      revenue_impact: "Se revisaron señales cualitativas de impacto a partir de las brechas digitales.",
+      business_intelligence: "Se revisaron señales comerciales locales de las sondas configuradas.",
+      business_enrichment: "Se revisaron datos públicos e investigación citada para el contexto del negocio.",
     };
     const copy = collectedCopy[module.key];
     if (copy) return copy;
@@ -485,48 +489,48 @@ function getEvidenceSummary(result: AuditResult, key: keyof AuditResult, showRev
     case "gbp_health": {
       const data = result.gbp_health;
       if (!data) return "";
-      return `${data.rating ? `${data.rating}/5 rating` : "Rating unavailable"}, ${data.review_count ?? 0} reviews, ${data.completeness_pct}% profile completeness.`;
+      return `${data.rating ? `Calificación ${data.rating}/5` : "Calificación no disponible"}, ${data.review_count ?? 0} reseñas, perfil ${data.completeness_pct}% completo.`;
     }
     case "review_sentiment": {
       const data = result.review_sentiment;
       if (!data) return "";
-      return `${data.google_rating ?? "N/A"}/5 rating, ${data.owner_response_rate ?? 0}% owner response rate, ${data.review_velocity ?? 0} reviews per month.`;
+      return `Calificación ${data.google_rating ?? "N/D"}/5, ${data.owner_response_rate ?? 0}% de respuestas del propietario, ${data.review_velocity ?? 0} reseñas por mes.`;
     }
     case "website_performance": {
       const data = result.website_performance;
       if (!data) return "";
-      const lcp = data.core_web_vitals.lcp ? `${(data.core_web_vitals.lcp / 1000).toFixed(1)}s LCP` : "LCP unavailable";
-      return `${data.performance_score}/100 mobile performance, ${lcp}, ${data.ssl_valid ? "SSL valid" : "SSL missing"}.`;
+      const lcp = data.core_web_vitals.lcp ? `LCP ${(data.core_web_vitals.lcp / 1000).toFixed(1)} s` : "LCP no disponible";
+      return `Rendimiento móvil ${data.performance_score}/100, ${lcp}, ${data.ssl_valid ? "SSL válido" : "sin SSL"}.`;
     }
     case "tech_stack": {
       const data = result.tech_stack;
       if (!data) return "";
-      const analytics = data.analytics.length > 0 ? data.analytics.join(", ") : "no analytics detected";
-      return `${data.digital_maturity_score}/100 digital maturity; ${analytics}.`;
+      const analytics = data.analytics.length > 0 ? data.analytics.join(", ") : "sin analítica detectada";
+      return `Madurez digital ${data.digital_maturity_score}/100; ${analytics}.`;
     }
     case "social_presence": {
       const data = result.social_presence;
       if (!data) return "";
-      return `${data.platforms_found} profiles found, ${data.platforms_active} active, ${data.total_following.toLocaleString()} total followers detected.`;
+      return `${data.platforms_found} perfiles encontrados, ${data.platforms_active} activos, ${data.total_following.toLocaleString("es-SV")} seguidores en total.`;
     }
     case "citation_consistency": {
       const data = result.citation_consistency;
       if (!data) return "";
-      return `${data.total_found} directories found, ${data.total_correct} correct, ${data.total_inconsistent} inconsistent, ${data.total_missing} missing.`;
+      return `${data.total_found} directorios encontrados, ${data.total_correct} correctos, ${data.total_inconsistent} inconsistentes, ${data.total_missing} faltantes.`;
     }
     case "competitive_comparison": {
       const data = result.competitive_comparison;
       if (!data) return "";
-      return `${data.competitors.length} nearby peers compared; current position is ${data.target_position}.`;
+      return `${data.competitors.length} competidores cercanos comparados; posición actual: ${translateEnum(data.target_position).toLowerCase()}.`;
     }
     case "revenue_impact": {
       const data = result.revenue_impact;
       if (!data) return "";
       if (showRevenueDollars) {
-        return `${formatCurrency(data.total_monthly_leakage.mid)} modeled monthly leakage across ${data.leaks.length} issue areas.`;
+        return `${formatCurrency(data.total_monthly_leakage.mid)} de fuga mensual modelada en ${data.leaks.length} áreas.`;
       }
       const assessment = data.opportunity_assessment;
-      return `Digital signals only; ${assessment?.impact_level?.replace(/_/g, " ") ?? "qualitative"} impact, ${assessment?.confidence ?? "directional"} confidence.`;
+      return `Solo señales digitales; impacto ${translateEnum(assessment?.impact_level ?? "qualitative").toLowerCase()}, confianza ${translateEnum(assessment?.confidence ?? "directional").toLowerCase()}.`;
     }
     default:
       return "";
@@ -535,23 +539,23 @@ function getEvidenceSummary(result: AuditResult, key: keyof AuditResult, showRev
 
 const coverageKindMeta = {
   checked: {
-    label: "Checked",
+    label: "Verificado",
     className: "border-emerald-200 bg-emerald-50 text-emerald-700",
   },
   sampled: {
-    label: "Sampled",
+    label: "Muestreado",
     className: "border-blue-200 bg-blue-50 text-blue-700",
   },
   not_checked: {
-    label: "Not checked",
+    label: "No verificado",
     className: "border-zinc-200 bg-zinc-50 text-zinc-700",
   },
 } as const;
 
 const coverageConfidenceMeta = {
-  high: "High confidence",
-  medium: "Medium confidence",
-  low: "Low confidence",
+  high: "Confianza alta",
+  medium: "Confianza media",
+  low: "Confianza baja",
 } as const;
 
 function AuditCoverageSummaryCard({ result }: { result: AuditResult }) {
@@ -563,22 +567,22 @@ function AuditCoverageSummaryCard({ result }: { result: AuditResult }) {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Activity className="h-5 w-5 text-blue-600" />
-              Audit Coverage
+              <Activity className="h-5 w-5 text-brand-blue" />
+              Cobertura de la auditoría
             </CardTitle>
             <CardDescription>{coverage.confidence.detail}</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
-              {coverage.counts.checked} Checked
+              {coverage.counts.checked} verificados
             </Badge>
             <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
-              {coverage.counts.sampled} Sampled
+              {coverage.counts.sampled} muestreados
             </Badge>
             <Badge variant="outline" className="border-zinc-200 bg-zinc-50 text-zinc-700">
-              {coverage.counts.notChecked} Not checked
+              {coverage.counts.notChecked} sin verificar
             </Badge>
-            <Badge variant="outline">{coverage.confidence.label}</Badge>
+            <Badge variant="outline">{{ Strong: "Cobertura sólida", Directional: "Cobertura orientativa", Limited: "Cobertura limitada" }[coverage.confidence.label]}</Badge>
           </div>
         </div>
       </CardHeader>
@@ -621,11 +625,11 @@ function EvidenceSourcesPanel({ result }: { result: AuditResult }) {
   if (!evidence || evidence.modules.length === 0) return null;
 
   const sourceCounts = [
-    { label: "Collected", value: evidence.summary.collected, className: "text-emerald-700" },
-    { label: "Needs setup", value: evidence.summary.unavailable, className: "text-amber-700" },
-    { label: "Skipped", value: evidence.summary.skipped, className: "text-slate-600" },
-    { label: "Failed", value: evidence.summary.failed, className: "text-red-700" },
-    { label: "Local gaps", value: evidence.summary.not_implemented, className: "text-zinc-700" },
+    { label: "recopiladas", value: evidence.summary.collected, className: "text-emerald-700" },
+    { label: "por configurar", value: evidence.summary.unavailable, className: "text-amber-700" },
+    { label: "omitidas", value: evidence.summary.skipped, className: "text-slate-600" },
+    { label: "fallidas", value: evidence.summary.failed, className: "text-red-700" },
+    { label: "no disponibles", value: evidence.summary.not_implemented, className: "text-zinc-700" },
   ];
 
   return (
@@ -635,10 +639,10 @@ function EvidenceSourcesPanel({ result }: { result: AuditResult }) {
           <div>
             <CardTitle className="flex items-center gap-2 text-lg">
               <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-              Data Sources
+              Fuentes de datos
             </CardTitle>
             <CardDescription>
-              What this audit used, skipped, or could not collect.
+              Qué utilizó esta auditoría, qué omitió y qué no pudo recopilar.
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -670,7 +674,7 @@ function EvidenceSourcesPanel({ result }: { result: AuditResult }) {
                     </Badge>
                   </div>
                   <p className="mt-1 text-xs text-slate-500">
-                    Source: {module.source}
+                    Fuente: {module.source}
                   </p>
                   {module.reason && (
                     <p className="mt-1 text-sm text-slate-600">{formatEvidenceModuleReason(module)}</p>
@@ -679,8 +683,8 @@ function EvidenceSourcesPanel({ result }: { result: AuditResult }) {
                 {module.status === "unavailable" && module.settings_key && (
                   <Link href="/settings" className="shrink-0">
                     <Button variant="outline" size="sm">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Open Settings
+                      <Settings className="h-4 w-4" />
+                      Abrir configuración
                     </Button>
                   </Link>
                 )}
@@ -705,7 +709,7 @@ export default function AuditReportPage() {
     async function fetchReport() {
       try {
         const res = await fetch(`/api/report/${reportId}`);
-        if (!res.ok) throw new Error(res.status === 404 ? "Report not found" : "Failed to load report");
+        if (!res.ok) throw new Error(res.status === 404 ? "Reporte no encontrado" : "No se pudo cargar el reporte");
         const data = await res.json();
         const repaired = repairMojibakeValue(data) as Report;
         setReport(
@@ -714,7 +718,7 @@ export default function AuditReportPage() {
             : repaired
         );
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(err instanceof Error ? err.message : "Error desconocido");
       } finally {
         setLoading(false);
       }
@@ -722,7 +726,7 @@ export default function AuditReportPage() {
     if (reportId) {
       fetchReport();
     } else {
-      setError("Report not found");
+      setError("Reporte no encontrado");
       setLoading(false);
     }
   }, [reportId]);
@@ -731,7 +735,7 @@ export default function AuditReportPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">Loading report...</p>
+        <p className="mt-4 text-muted-foreground">Cargando reporte…</p>
       </div>
     );
   }
@@ -740,9 +744,9 @@ export default function AuditReportPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="h-8 w-8 text-destructive" />
-        <p className="mt-4 text-muted-foreground">{error || "Report not found"}</p>
+        <p className="mt-4 text-muted-foreground">{error || "Reporte no encontrado"}</p>
         <Link href="/audits" className="mt-4">
-          <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4" />Back to Audits</Button>
+          <Button variant="outline"><ArrowLeft className="h-4 w-4" />Volver a auditorías</Button>
         </Link>
       </div>
     );
@@ -764,8 +768,9 @@ export default function AuditReportPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <XCircle className="h-8 w-8 text-destructive" />
-        <p className="mt-4 text-lg font-medium">Audit failed</p>
-        <Link href="/audits/new" className="mt-4"><Button>Try Again</Button></Link>
+        <p className="mt-4 text-lg font-medium">La auditoría falló</p>
+        <p className="mt-1 max-w-md text-center text-sm text-muted-foreground">Revisa las llaves en Configuración o vuelve a intentarlo. En Vercel, verifica que la función no haya excedido su duración máxima.</p>
+        <Link href="/audits/new" className="mt-4"><Button>Reintentar</Button></Link>
       </div>
     );
   }
@@ -779,7 +784,7 @@ export default function AuditReportPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="h-8 w-8 text-muted-foreground" />
-        <p className="mt-4 text-muted-foreground">No result data available</p>
+        <p className="mt-4 text-muted-foreground">No hay datos de resultado disponibles</p>
       </div>
     );
   }
@@ -787,29 +792,29 @@ export default function AuditReportPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <Link href="/audits" className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-flex items-center gap-1">
-            <ArrowLeft className="h-3 w-3" /> Back to Audits
+          <Link href="/audits" className="press mb-2 inline-flex items-center gap-1 text-[14px] text-primary hover:opacity-80">
+            <ArrowLeft className="h-3.5 w-3.5" /> Auditorías
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight mt-1">{auditInput.businessName}</h1>
-          <p className="text-muted-foreground">
-            {auditInput.city && `${auditInput.city}, `}{auditInput.state || ""}
-            {" · "}Audited {new Date(report.created_at).toLocaleDateString()}
+          <h1 className="mt-1 text-[32px] font-semibold sm:text-[38px]">{auditInput.businessName}</h1>
+          <p className="mt-1 text-[15px] text-muted-foreground">
+            {[auditInput.city, auditInput.state].filter(Boolean).join(", ")}
+            {(auditInput.city || auditInput.state) ? " · " : ""}Auditado el {new Date(report.created_at).toLocaleDateString("es-SV", { year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="no-print flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => window.open(`/api/report/${params.id}/pdf`, "_blank")}>
-            <Download className="mr-2 h-4 w-4" />PDF
+            <Download className="h-4 w-4" />PDF
           </Button>
           <Button variant="outline" size="sm" onClick={() => window.open(`/api/report/${params.id}/docx`, "_blank")}>
-            <FileText className="mr-2 h-4 w-4" />DOCX
+            <FileText className="h-4 w-4" />Word
           </Button>
           <Button variant="outline" size="sm" onClick={() => window.open(`/api/report/${params.id}/pptx`, "_blank")}>
-            <Presentation className="mr-2 h-4 w-4" />PPTX
+            <Presentation className="h-4 w-4" />PowerPoint
           </Button>
           <Button variant="outline" size="sm" onClick={() => window.open(`/api/report/${params.id}/xlsx`, "_blank")}>
-            <Sheet className="mr-2 h-4 w-4" />XLSX
+            <Sheet className="h-4 w-4" />Excel
           </Button>
         </div>
       </div>
@@ -849,9 +854,9 @@ export default function AuditReportPage() {
       {/* Detailed Evidence */}
       <section className="space-y-4">
         <div className="space-y-1">
-          <h2 className="text-xl font-semibold tracking-tight">Detailed Evidence</h2>
-          <p className="text-sm text-muted-foreground">
-            Expand these sections to inspect the source status, raw metrics, findings, and recommendations behind this audit.
+          <h2 className="text-[22px] font-semibold">Evidencia detallada</h2>
+          <p className="text-[15px] text-muted-foreground">
+            Expande cada sección para ver el estado de la fuente, las métricas, los hallazgos y las recomendaciones detrás de esta auditoría.
           </p>
         </div>
 
@@ -861,12 +866,12 @@ export default function AuditReportPage() {
         {result.gbp_health && (() => {
           const m = getModuleContent("gbp_health", result.gbp_health.findings, result.gbp_health.recommendations, result.gbp_health.score, result.ai_analysis);
           return (
-            <ModuleCard title="Google Business Profile Health" icon={<MapPin className="h-5 w-5" />} grade={result.gbp_health.grade} score={m.score} findings={m.findings} recommendations={m.recommendations} isEstimated={m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "gbp_health")}>
+            <ModuleCard title="Salud del perfil de Google Business" icon={<MapPin className="h-5 w-5" />} grade={result.gbp_health.grade} score={m.score} findings={m.findings} recommendations={m.recommendations} isEstimated={m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "gbp_health")}>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div><span className="text-muted-foreground">Rating</span><p className="font-semibold">{result.gbp_health.rating ? `${result.gbp_health.rating} / 5.0` : "N/A"}</p></div>
-                <div><span className="text-muted-foreground">Reviews</span><p className="font-semibold">{result.gbp_health.review_count ?? "N/A"}</p></div>
-                <div><span className="text-muted-foreground">Photos</span><p className="font-semibold">{result.gbp_health.photos_count}</p></div>
-                <div><span className="text-muted-foreground">Completeness</span><p className="font-semibold">{result.gbp_health.completeness_pct}%</p></div>
+                <div><span className="text-muted-foreground">Calificación</span><p className="font-semibold">{result.gbp_health.rating ? `${result.gbp_health.rating} / 5.0` : "N/D"}</p></div>
+                <div><span className="text-muted-foreground">Reseñas</span><p className="font-semibold">{result.gbp_health.review_count ?? "N/D"}</p></div>
+                <div><span className="text-muted-foreground">Fotos</span><p className="font-semibold">{result.gbp_health.photos_count}</p></div>
+                <div><span className="text-muted-foreground">Completitud</span><p className="font-semibold">{result.gbp_health.completeness_pct}%</p></div>
               </div>
             </ModuleCard>
           );
@@ -875,12 +880,12 @@ export default function AuditReportPage() {
         {result.review_sentiment && (() => {
           const m = getModuleContent("review_sentiment", result.review_sentiment.findings, result.review_sentiment.recommendations, result.review_sentiment.score, result.ai_analysis);
           return (
-            <ModuleCard title="Review Sentiment & Reputation" icon={<Star className="h-5 w-5" />} grade={result.review_sentiment.grade} score={m.score} findings={m.findings} recommendations={m.recommendations} isEstimated={m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "review_sentiment")}>
+            <ModuleCard title="Sentimiento de reseñas y reputación" icon={<Star className="h-5 w-5" />} grade={result.review_sentiment.grade} score={m.score} findings={m.findings} recommendations={m.recommendations} isEstimated={m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "review_sentiment")}>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div><span className="text-muted-foreground">Google Rating</span><p className="font-semibold">{result.review_sentiment.google_rating ?? "N/A"}</p></div>
-                <div><span className="text-muted-foreground">Response Rate</span><p className="font-semibold">{result.review_sentiment.owner_response_rate ?? 0}%</p></div>
-                <div><span className="text-muted-foreground">Trend</span><p className="font-semibold capitalize">{result.review_sentiment.trend_direction}</p></div>
-                <div><span className="text-muted-foreground">Velocity</span><p className="font-semibold">{result.review_sentiment.review_velocity ?? 0}/mo</p></div>
+                <div><span className="text-muted-foreground">Calificación Google</span><p className="font-semibold">{result.review_sentiment.google_rating ?? "N/D"}</p></div>
+                <div><span className="text-muted-foreground">Tasa de respuesta</span><p className="font-semibold">{result.review_sentiment.owner_response_rate ?? 0}%</p></div>
+                <div><span className="text-muted-foreground">Tendencia</span><p className="font-semibold">{translateEnum(result.review_sentiment.trend_direction)}</p></div>
+                <div><span className="text-muted-foreground">Ritmo</span><p className="font-semibold">{result.review_sentiment.review_velocity ?? 0}/mes</p></div>
               </div>
               <div className="mt-2">
                 <div className="flex h-3 rounded-full overflow-hidden">
@@ -889,9 +894,9 @@ export default function AuditReportPage() {
                   <div className="bg-red-400" style={{ width: `${result.review_sentiment.sentiment_breakdown.negative}%` }} />
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                  <span>{result.review_sentiment.sentiment_breakdown.positive}% Positive</span>
-                  <span>{result.review_sentiment.sentiment_breakdown.neutral}% Neutral</span>
-                  <span>{result.review_sentiment.sentiment_breakdown.negative}% Negative</span>
+                  <span>{result.review_sentiment.sentiment_breakdown.positive}% positivas</span>
+                  <span>{result.review_sentiment.sentiment_breakdown.neutral}% neutrales</span>
+                  <span>{result.review_sentiment.sentiment_breakdown.negative}% negativas</span>
                 </div>
               </div>
             </ModuleCard>
@@ -901,18 +906,18 @@ export default function AuditReportPage() {
         {result.website_performance && (() => {
           const m = getModuleContent("website_performance", result.website_performance.findings, result.website_performance.recommendations, result.website_performance.score, result.ai_analysis);
           return (
-            <ModuleCard title="Website Performance" icon={<Globe className="h-5 w-5" />} grade={result.website_performance.grade} score={m.score} findings={m.findings} recommendations={m.recommendations} isEstimated={m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "website_performance")}>
+            <ModuleCard title="Rendimiento del sitio web" icon={<Globe className="h-5 w-5" />} grade={result.website_performance.grade} score={m.score} findings={m.findings} recommendations={m.recommendations} isEstimated={m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "website_performance")}>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div><span className="text-muted-foreground">Performance</span><p className="font-semibold">{result.website_performance.performance_score}/100</p></div>
+                <div><span className="text-muted-foreground">Rendimiento</span><p className="font-semibold">{result.website_performance.performance_score}/100</p></div>
                 <div><span className="text-muted-foreground">SEO</span><p className="font-semibold">{result.website_performance.seo_score}/100</p></div>
-                <div><span className="text-muted-foreground">Accessibility</span><p className="font-semibold">{result.website_performance.accessibility_score}/100</p></div>
-                <div><span className="text-muted-foreground">SSL</span><p className="font-semibold">{result.website_performance.ssl_valid ? "Valid" : "Missing"}</p></div>
+                <div><span className="text-muted-foreground">Accesibilidad</span><p className="font-semibold">{result.website_performance.accessibility_score}/100</p></div>
+                <div><span className="text-muted-foreground">SSL</span><p className="font-semibold">{result.website_performance.ssl_valid ? "Válido" : "Ausente"}</p></div>
               </div>
               <div className="flex gap-4 mt-2">
                 {result.website_performance.core_web_vitals.lcp !== undefined && (
                   <div className="flex items-center gap-1 text-xs">
                     {result.website_performance.core_web_vitals.lcp_pass ? <CheckCircle2 className="h-3 w-3 text-green-500" /> : <XCircle className="h-3 w-3 text-red-500" />}
-                    LCP: {(result.website_performance.core_web_vitals.lcp / 1000).toFixed(1)}s
+                    LCP: {(result.website_performance.core_web_vitals.lcp / 1000).toFixed(1)} s
                   </div>
                 )}
                 {result.website_performance.core_web_vitals.cls !== undefined && (
@@ -929,14 +934,14 @@ export default function AuditReportPage() {
         {result.tech_stack && (() => {
           const m = getModuleContent("tech_stack", result.tech_stack.findings, result.tech_stack.recommendations, result.tech_stack.score, result.ai_analysis);
           return (
-            <ModuleCard title="Technology Stack & Digital Maturity" icon={<Cpu className="h-5 w-5" />} grade={result.tech_stack.grade} score={m.score} findings={m.findings} recommendations={m.recommendations} isEstimated={m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "tech_stack")}>
+            <ModuleCard title="Tecnología y madurez digital" icon={<Cpu className="h-5 w-5" />} grade={result.tech_stack.grade} score={m.score} findings={m.findings} recommendations={m.recommendations} isEstimated={m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "tech_stack")}>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                <div><span className="text-muted-foreground">CMS</span><p className="font-semibold">{result.tech_stack.cms || "Unknown"}</p></div>
-                <div><span className="text-muted-foreground">Analytics</span><p className="font-semibold">{result.tech_stack.analytics.length > 0 ? result.tech_stack.analytics.join(", ") : "None"}</p></div>
-                <div><span className="text-muted-foreground">Booking</span><p className="font-semibold">{result.tech_stack.booking_system || "None"}</p></div>
-                <div><span className="text-muted-foreground">Chat</span><p className="font-semibold">{result.tech_stack.chat_widget || "None"}</p></div>
-                <div><span className="text-muted-foreground">Payment</span><p className="font-semibold">{result.tech_stack.payment_processor || "None"}</p></div>
-                <div><span className="text-muted-foreground">Maturity</span><p className="font-semibold">{result.tech_stack.digital_maturity_score}/100</p></div>
+                <div><span className="text-muted-foreground">CMS</span><p className="font-semibold">{result.tech_stack.cms || "Desconocido"}</p></div>
+                <div><span className="text-muted-foreground">Analítica</span><p className="font-semibold">{result.tech_stack.analytics.length > 0 ? result.tech_stack.analytics.join(", ") : "Ninguna"}</p></div>
+                <div><span className="text-muted-foreground">Reservas</span><p className="font-semibold">{result.tech_stack.booking_system || "Ninguno"}</p></div>
+                <div><span className="text-muted-foreground">Chat</span><p className="font-semibold">{result.tech_stack.chat_widget || "Ninguno"}</p></div>
+                <div><span className="text-muted-foreground">Pagos</span><p className="font-semibold">{result.tech_stack.payment_processor || "Ninguno"}</p></div>
+                <div><span className="text-muted-foreground">Madurez</span><p className="font-semibold">{result.tech_stack.digital_maturity_score}/100</p></div>
               </div>
             </ModuleCard>
           );
@@ -945,21 +950,21 @@ export default function AuditReportPage() {
         {result.social_presence && (() => {
           const m = getModuleContent("social_presence", result.social_presence.findings, result.social_presence.recommendations, result.social_presence.score, result.ai_analysis);
           return (
-            <ModuleCard title="Social Media Presence" icon={<Users className="h-5 w-5" />} grade={result.social_presence.grade} score={m.score} findings={m.findings} recommendations={m.recommendations} isEstimated={m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "social_presence")}>
+            <ModuleCard title="Presencia en redes sociales" icon={<Users className="h-5 w-5" />} grade={result.social_presence.grade} score={m.score} findings={m.findings} recommendations={m.recommendations} isEstimated={m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "social_presence")}>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div><span className="text-muted-foreground">Platforms Found</span><p className="font-semibold">{result.social_presence.platforms_found}</p></div>
-                <div><span className="text-muted-foreground">Active</span><p className="font-semibold">{result.social_presence.platforms_active}</p></div>
-                <div><span className="text-muted-foreground">Total Following</span><p className="font-semibold">{result.social_presence.total_following.toLocaleString()}</p></div>
-                <div><span className="text-muted-foreground">NAP Consistent</span><p className="font-semibold">{result.social_presence.nap_consistent ? "Yes" : "No"}</p></div>
+                <div><span className="text-muted-foreground">Plataformas</span><p className="font-semibold">{result.social_presence.platforms_found}</p></div>
+                <div><span className="text-muted-foreground">Activas</span><p className="font-semibold">{result.social_presence.platforms_active}</p></div>
+                <div><span className="text-muted-foreground">Seguidores</span><p className="font-semibold">{result.social_presence.total_following.toLocaleString("es-SV")}</p></div>
+                <div><span className="text-muted-foreground">Datos consistentes</span><p className="font-semibold">{result.social_presence.nap_consistent ? "Sí" : "No"}</p></div>
               </div>
               <div className="mt-3 space-y-1">
                 {result.social_presence.platforms.map((p, idx: number) => (
                   <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-border/50 last:border-0">
                     <span className="font-medium">{p.name}</span>
                     <div className="flex items-center gap-2">
-                      {p.found ? <Badge variant="secondary" className="text-xs">Found</Badge> : <Badge variant="outline" className="text-xs text-muted-foreground">Not Found</Badge>}
-                      {p.is_active && <Badge className="text-xs bg-green-100 text-green-800">Active</Badge>}
-                      {p.follower_count !== undefined && <span className="text-muted-foreground">{p.follower_count.toLocaleString()} followers</span>}
+                      {p.found ? <Badge variant="secondary" className="text-xs">Encontrado</Badge> : <Badge variant="outline" className="text-xs text-muted-foreground">No encontrado</Badge>}
+                      {p.is_active && <Badge className="text-xs bg-green-100 text-green-800">Activo</Badge>}
+                      {p.follower_count !== undefined && <span className="text-muted-foreground">{p.follower_count.toLocaleString("es-SV")} seguidores</span>}
                     </div>
                   </div>
                 ))}
@@ -974,7 +979,7 @@ export default function AuditReportPage() {
           const citationIsEstimated = result.citation_consistency.is_mock ?? m.isEstimated;
           return (
             <ModuleCard
-              title="Citation & Directory Consistency"
+              title="Consistencia en directorios"
               icon={<BookOpen className="h-5 w-5" />}
               grade={result.citation_consistency.grade}
               score={m.score}
@@ -983,23 +988,23 @@ export default function AuditReportPage() {
               isEstimated={citationIsEstimated}
               defaultCollapsed
               summary={getEvidenceSummary(result, "citation_consistency")}
-              collapsedNotice="Based on estimated data — requires a live directory scan to verify NAP accuracy."
+              collapsedNotice="Basado en datos estimados: requiere un escaneo de directorios en vivo para verificar nombre, dirección y teléfono."
             >
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div><span className="text-muted-foreground">Found</span><p className="font-semibold">{result.citation_consistency.total_found}</p></div>
-                <div><span className="text-muted-foreground">Correct</span><p className="font-semibold text-green-600">{result.citation_consistency.total_correct}</p></div>
-                <div><span className="text-muted-foreground">Inconsistent</span><p className="font-semibold text-yellow-600">{result.citation_consistency.total_inconsistent}</p></div>
-                <div><span className="text-muted-foreground">Missing</span><p className="font-semibold text-red-600">{result.citation_consistency.total_missing}</p></div>
+                <div><span className="text-muted-foreground">Encontrados</span><p className="font-semibold">{result.citation_consistency.total_found}</p></div>
+                <div><span className="text-muted-foreground">Correctos</span><p className="font-semibold text-green-600">{result.citation_consistency.total_correct}</p></div>
+                <div><span className="text-muted-foreground">Inconsistentes</span><p className="font-semibold text-yellow-600">{result.citation_consistency.total_inconsistent}</p></div>
+                <div><span className="text-muted-foreground">Faltantes</span><p className="font-semibold text-red-600">{result.citation_consistency.total_missing}</p></div>
               </div>
               <div className="mt-3 space-y-1">
                 {result.citation_consistency.directories.map((d, idx: number) => (
                   <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-border/50 last:border-0">
                     <span className="font-medium">{d.name}</span>
                     <div className="flex items-center gap-2">
-                      {d.status === "found_correct" && <Badge className="text-xs bg-green-100 text-green-800">Correct</Badge>}
-                      {d.status === "found_inconsistent" && <Badge className="text-xs bg-yellow-100 text-yellow-800">Inconsistent</Badge>}
-                      {d.status === "not_found" && <Badge variant="outline" className="text-xs text-red-600">Not Found</Badge>}
-                      {d.status === "unchecked" && <Badge variant="outline" className="text-xs">Unchecked</Badge>}
+                      {d.status === "found_correct" && <Badge className="text-xs bg-green-100 text-green-800">Correcto</Badge>}
+                      {d.status === "found_inconsistent" && <Badge className="text-xs bg-yellow-100 text-yellow-800">Inconsistente</Badge>}
+                      {d.status === "not_found" && <Badge variant="outline" className="text-xs text-red-600">No encontrado</Badge>}
+                      {d.status === "unchecked" && <Badge variant="outline" className="text-xs">Sin verificar</Badge>}
                     </div>
                   </div>
                 ))}
@@ -1011,18 +1016,18 @@ export default function AuditReportPage() {
         {result.competitive_comparison && (() => {
           const m = getModuleContent("competitive_comparison", result.competitive_comparison.findings, result.competitive_comparison.recommendations, result.competitive_comparison.score, result.ai_analysis);
           return (
-            <ModuleCard title="Competitive Analysis" icon={<Trophy className="h-5 w-5" />} grade={result.competitive_comparison.grade} score={m.score} findings={m.findings} recommendations={m.recommendations} isEstimated={m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "competitive_comparison")}>
+            <ModuleCard title="Análisis competitivo" icon={<Trophy className="h-5 w-5" />} grade={result.competitive_comparison.grade} score={m.score} findings={m.findings} recommendations={m.recommendations} isEstimated={m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "competitive_comparison")}>
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-sm text-muted-foreground">Your Position:</span>
+                <span className="text-sm text-muted-foreground">Posición:</span>
                 <Badge className={
                   result.competitive_comparison.target_position === "leader" ? "bg-green-100 text-green-800" :
                     result.competitive_comparison.target_position === "challenger" ? "bg-yellow-100 text-yellow-800" :
                       "bg-red-100 text-red-800"
                 }>
-                  {repairMojibakeText(result.competitive_comparison.target_position.charAt(0).toUpperCase() + result.competitive_comparison.target_position.slice(1))}
+                  {translateEnum(repairMojibakeText(result.competitive_comparison.target_position))}
                 </Badge>
                 {result.competitive_comparison.agentic_reconciled && (
-                  <span className="text-[10px] text-violet-500 font-medium">✓ AI-verified peers</span>
+                  <span className="text-[11px] font-medium text-brand-teal">✓ Competidores verificados con IA</span>
                 )}
               </div>
               <div className="space-y-1 mt-2">
@@ -1031,8 +1036,8 @@ export default function AuditReportPage() {
                     <span className="font-medium">{repairMojibakeText(c.name)}</span>
                     <div className="flex items-center gap-3">
                       {c.rating && <span>{c.rating}★</span>}
-                      {c.review_count && <span className="text-muted-foreground">{c.review_count} reviews</span>}
-                      <Badge variant="outline" className="text-xs capitalize">{c.estimated_position}</Badge>
+                      {c.review_count && <span className="text-muted-foreground">{c.review_count} reseñas</span>}
+                      <Badge variant="outline" className="text-xs">{translateEnum(c.estimated_position)}</Badge>
                     </div>
                   </div>
                 ))}
@@ -1045,24 +1050,24 @@ export default function AuditReportPage() {
           const m = getModuleContent("revenue_impact", result.revenue_impact.findings, result.revenue_impact.recommendations, result.revenue_impact.score, result.ai_analysis);
           const showRevenueDollars = shouldShowRevenueDollars(result.revenue_impact);
           const findings = showRevenueDollars ? m.findings : visibleRevenueFindings(m.findings, result.revenue_impact);
-          const scenarioLabels = { low: "Conservative", mid: "Moderate", high: "Aggressive" } as const;
+          const scenarioLabels = { low: "Conservador", mid: "Moderado", high: "Agresivo" } as const;
           const scenarioColors = { low: "text-emerald-600", mid: "text-amber-600", high: "text-red-600" } as const;
           const activeLeakage = result.revenue_impact.total_monthly_leakage[revenueScenario];
           const activeAnnual = result.revenue_impact.annual_impact[revenueScenario];
           return (
-            <ModuleCard title={showRevenueDollars ? "Revenue Impact Analysis" : "Business Impact Signals"} icon={<DollarSign className="h-5 w-5" />} grade={result.revenue_impact.grade} score={m.score} findings={findings} recommendations={m.recommendations} isEstimated={!showRevenueDollars || m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "revenue_impact", showRevenueDollars)}>
+            <ModuleCard title={showRevenueDollars ? "Análisis de impacto en ingresos" : "Señales de impacto en el negocio"} icon={<DollarSign className="h-5 w-5" />} grade={result.revenue_impact.grade} score={m.score} findings={findings} recommendations={m.recommendations} isEstimated={!showRevenueDollars || m.isEstimated} defaultCollapsed summary={getEvidenceSummary(result, "revenue_impact", showRevenueDollars)}>
               {showRevenueDollars ? (
                 <>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs text-muted-foreground font-medium">Revenue Scenario</span>
-                    <div className="flex rounded-lg border border-border overflow-hidden text-xs">
+                    <span className="text-xs text-muted-foreground font-medium">Escenario</span>
+                    <div className="flex rounded-full bg-secondary p-0.5 text-xs">
                       {(["low", "mid", "high"] as const).map((s) => (
                         <button
                           key={s}
                           onClick={() => setRevenueScenario(s)}
-                          className={`px-3 py-1.5 font-medium transition-colors ${revenueScenario === s
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-background text-muted-foreground hover:bg-muted"
+                          className={`press rounded-full px-3 py-1.5 font-medium ${revenueScenario === s
+                              ? "bg-card text-foreground shadow-card"
+                              : "text-muted-foreground hover:text-foreground"
                             }`}
                         >
                           {scenarioLabels[s]}
@@ -1072,39 +1077,39 @@ export default function AuditReportPage() {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mb-3">
                     <div>
-                      <span className="text-muted-foreground">Monthly Leakage</span>
+                      <span className="text-muted-foreground">Fuga mensual</span>
                       <p className={`font-semibold ${scenarioColors[revenueScenario]}`}>{formatCurrency(activeLeakage)}</p>
-                      <p className="text-[10px] text-muted-foreground">{scenarioLabels[revenueScenario]} estimate</p>
+                      <p className="text-[10px] text-muted-foreground">Estimación: {scenarioLabels[revenueScenario].toLowerCase()}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Annual Impact</span>
+                      <span className="text-muted-foreground">Impacto anual</span>
                       <p className={`font-semibold ${scenarioColors[revenueScenario]}`}>{formatCurrency(activeAnnual)}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">ROI if Fixed</span>
+                      <span className="text-muted-foreground">ROI al corregir</span>
                       <p className="font-semibold text-green-600">{result.revenue_impact.roi_if_fixed}</p>
                     </div>
                   </div>
                 </>
               ) : (
                 <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900 mb-3">
-                  <p className="font-semibold">No verified revenue source found</p>
+                  <p className="font-semibold">No se encontró una fuente verificada de ingresos</p>
                   <p className="mt-1 text-amber-800">
-                    Public data found business-impact signals, but revenue is private or unverified. This report does not present dollar leakage as an opportunity.
+                    Los datos públicos muestran señales de impacto, pero los ingresos son privados o no verificados. Este reporte no presenta fugas en dólares como oportunidad.
                   </p>
                   {result.revenue_impact.opportunity_assessment && (
                     <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                       <div>
-                        <span className="text-amber-700/80">Impact level</span>
-                        <p className="font-semibold capitalize">{result.revenue_impact.opportunity_assessment.impact_level.replace(/_/g, " ")}</p>
+                        <span className="text-amber-700/80">Nivel de impacto</span>
+                        <p className="font-semibold">{translateEnum(result.revenue_impact.opportunity_assessment.impact_level)}</p>
                       </div>
                       <div>
-                        <span className="text-amber-700/80">Confidence</span>
-                        <p className="font-semibold capitalize">{result.revenue_impact.opportunity_assessment.confidence}</p>
+                        <span className="text-amber-700/80">Confianza</span>
+                        <p className="font-semibold">{translateEnum(result.revenue_impact.opportunity_assessment.confidence)}</p>
                       </div>
                       <div>
-                        <span className="text-amber-700/80">Basis</span>
-                        <p className="font-semibold">Digital signals only</p>
+                        <span className="text-amber-700/80">Base</span>
+                        <p className="font-semibold">Solo señales digitales</p>
                       </div>
                     </div>
                   )}
@@ -1117,18 +1122,18 @@ export default function AuditReportPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{leak.category}</span>
                         {leak.severity && (
-                          <Badge variant={leak.severity === "critical" ? "destructive" : "secondary"} className="text-[10px] capitalize">
-                            {leak.severity}
+                          <Badge variant={leak.severity === "critical" ? "destructive" : "secondary"} className="text-[10px]">
+                            {translateEnum(leak.severity)}
                           </Badge>
                         )}
                       </div>
                       {showRevenueDollars ? (
                         <span className={`font-semibold ${scenarioColors[revenueScenario]}`}>
-                          {formatCurrency(leak[`${revenueScenario}_estimate` as "low_estimate" | "mid_estimate" | "high_estimate"])}/mo
+                          {formatCurrency(leak[`${revenueScenario}_estimate` as "low_estimate" | "mid_estimate" | "high_estimate"])}/mes
                         </span>
                       ) : (
                         <span className="font-semibold text-muted-foreground">
-                          {leak.confidence ? `${leak.confidence}/10 confidence` : "Signal"}
+                          {leak.confidence ? `Confianza ${leak.confidence}/10` : "Señal"}
                         </span>
                       )}
                     </div>
@@ -1152,8 +1157,8 @@ export default function AuditReportPage() {
       {!result.ai_analysis && result.recommendations.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Prioritized Recommendations</CardTitle>
-            <CardDescription>Sorted by impact and effort — start at the top.</CardDescription>
+            <CardTitle>Recomendaciones priorizadas</CardTitle>
+            <CardDescription>Ordenadas por impacto y esfuerzo: empieza por arriba.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -1166,12 +1171,12 @@ export default function AuditReportPage() {
                     <p className="text-sm font-medium text-slate-800">{rec.title}</p>
                     <div className="flex items-center gap-3 mt-1.5 text-[11px] font-medium text-slate-500">
                       <span className={`flex items-center gap-1 ${rec.impact === "high" ? "text-amber-600" : "text-emerald-600"}`}>
-                        <Zap className="h-3 w-3" /> {rec.impact} impact
+                        <Zap className="h-3 w-3" /> Impacto {translateEnum(rec.impact).toLowerCase()}
                       </span>
                       <span className="flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" /> {rec.effort} effort
+                        <CheckCircle2 className="h-3 w-3" /> Esfuerzo {translateEnum(rec.effort).toLowerCase()}
                       </span>
-                      <span className="ml-auto text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-sm">{rec.module}</span>
+                      <span className="ml-auto rounded-full bg-secondary px-2 py-0.5 text-muted-foreground">{humanizeModuleKey(rec.module)}</span>
                     </div>
                   </div>
                 </div>
